@@ -1,21 +1,34 @@
 import apiClient from '@/lib/api-client';
 
-export interface AdminUser {
+export interface AdminWallet {
   id: string;
-  email: string;
-  phone?: string;
-  role: string;
-  status: 'ACTIVE' | 'BLOCKED' | 'PENDING';
-  profile: {
-    firstName: string;
-    lastName: string;
-    country?: string;
+  currency: string;
+  balance: number;
+  reservedBalance: number;
+  address?: string;
+  user: {
+    email: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+    };
   };
+  updatedAt: string;
+}
+
+export interface AdminTransaction {
+  id: string;
+  amount: number;
+  type: string;
+  reference: string;
+  status: string;
   createdAt: string;
-  wallets: Array<{
+  wallet: {
     currency: string;
-    balance: number;
-  }>;
+    user: {
+      email: string;
+    };
+  };
 }
 
 export const adminService = {
@@ -31,6 +44,21 @@ export const adminService = {
 
   getUserDetail: async (userId: string) => {
     const response = await apiClient.get(`/admin/users/${userId}`);
+    return response.data;
+  },
+
+  getWallets: async (page = 1, limit = 10, search?: string) => {
+    const response = await apiClient.get('/admin/wallets', { params: { page, limit, search } });
+    return response.data;
+  },
+
+  getWalletDetail: async (walletId: string) => {
+    const response = await apiClient.get(`/admin/wallets/${walletId}`);
+    return response.data;
+  },
+
+  getTransactions: async (page = 1, limit = 10) => {
+    const response = await apiClient.get('/admin/transactions', { params: { page, limit } });
     return response.data;
   },
 };

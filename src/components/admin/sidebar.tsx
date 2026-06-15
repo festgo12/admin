@@ -21,7 +21,7 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'User Management', href: '/admin/users', icon: Users },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
-  { name: 'Marketplace', href: '/admin/marketplace', icon: TrendingUp },
+  { name: 'Advertisements', href: '/admin/ads', icon: TrendingUp },
   { name: 'Wallets', href: '/admin/wallets', icon: Wallet },
   { name: 'Gift Cards', href: '/admin/gift-cards', icon: CreditCard },
   { name: 'Disputes', href: '/admin/disputes', icon: AlertTriangle },

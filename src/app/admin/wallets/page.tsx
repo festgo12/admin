@@ -1,6 +1,9 @@
 'use client';
 
 import { WalletsTable } from '@/components/admin/wallets-table';
+import { BlockchainMonitoring } from '@/components/admin/blockchain-monitoring';
+import { FailedTransactionsTable } from '@/components/admin/failed-transactions-table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function WalletsPage() {
   return (
@@ -8,7 +11,23 @@ export default function WalletsPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Wallet Monitoring</h2>
       </div>
-      <WalletsTable />
+      
+      <Tabs defaultValue="list" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="list">Wallet List</TabsTrigger>
+          <TabsTrigger value="blockchain">Blockchain Monitoring</TabsTrigger>
+          <TabsTrigger value="failed">Failed Queue</TabsTrigger>
+        </TabsList>
+        <TabsContent value="list" className="space-y-4">
+          <WalletsTable />
+        </TabsContent>
+        <TabsContent value="blockchain" className="space-y-4">
+          <BlockchainMonitoring />
+        </TabsContent>
+        <TabsContent value="failed" className="space-y-4">
+          <FailedTransactionsTable />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

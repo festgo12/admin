@@ -16,20 +16,41 @@ export interface AdminWallet {
   updatedAt: string;
 }
 
-export interface AdminTransaction {
+//   };
+// }
+
+export interface AdminOrder {
   id: string;
-  amount: number;
-  type: string;
-  reference: string;
+  buyerId: string;
+  sellerId: string;
+  adId: string;
   status: string;
+  fiatAmount: number;
+  cryptoAmount: number;
+  feeAmount: number;
+  fraudFlagged: boolean;
   createdAt: string;
-  wallet: {
-    currency: string;
-    user: {
-      email: string;
+  updatedAt: string;
+  buyer: {
+    email: string;
+    profile: {
+      firstName: string;
+      lastName: string;
     };
   };
+  seller: {
+    email: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+    };
+  };
+  ad: {
+    asset: string;
+    price: number;
+  };
 }
+
 
 export const adminService = {
   getUsers: async (page = 1, limit = 10, search?: string) => {
@@ -73,11 +94,36 @@ export const adminService = {
     return response.data;
   },
 
-  deleteAd: async (id: string) => {
-    const response = await apiClient.delete(`/marketplace/ads/${id}`);
+  // const response = await apiClient.delete(`/marketplace/ads/${id}`);
+  // return response.data;
+  // },
+
+  getOrders: async (page = 1, limit = 10, search?: string) => {
+    const response = await apiClient.get('/admin/orders', { params: { page, limit, search } });
+    return response.data;
+  },
+
+  getOrderDetail: async (orderId: string) => {
+    const response = await apiClient.get(`/admin/orders/${orderId}`);
+    return response.data;
+  },
+
+  getBlockchainStats: async () => {
+    const response = await apiClient.get('/admin/blockchain/stats');
+    return response.data;
+  },
+
+  getBlockchainTransactions: async (page = 1, limit = 10) => {
+    const response = await apiClient.get('/admin/blockchain/transactions', { params: { page, limit } });
+    return response.data;
+  },
+
+  getFailedTransactions: async (page = 1, limit = 10) => {
+    const response = await apiClient.get('/admin/blockchain/failed', { params: { page, limit } });
     return response.data;
   },
 };
+
 
 export interface AdminAd {
   id: string;

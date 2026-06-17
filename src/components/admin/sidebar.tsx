@@ -25,6 +25,7 @@ const navigation = [
   { name: 'Wallets', href: '/admin/wallets', icon: Wallet },
   { name: 'Gift Cards', href: '/admin/gift-cards', icon: CreditCard },
   { name: 'Disputes', href: '/admin/disputes', icon: AlertTriangle },
+  { name: 'Paystack Payments', href: '/admin/payments', icon: CreditCard },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Security Center', href: '/admin/security', icon: ShieldCheck },
 ];

@@ -13,7 +13,8 @@ import {
   AlertTriangle,
   FileText,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Gift Cards', href: '/admin/gift-cards', icon: CreditCard },
   { name: 'Disputes', href: '/admin/disputes', icon: AlertTriangle },
   { name: 'Paystack Payments', href: '/admin/payments', icon: CreditCard },
+  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Security Center', href: '/admin/security', icon: ShieldCheck },
 ];

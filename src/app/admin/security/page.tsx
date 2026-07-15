@@ -2,6 +2,10 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuditLogTable } from '@/components/admin/audit-log-table';
+import { SecurityOverview } from '@/components/admin/security-overview';
+import { FraudRulesDashboard } from '@/components/admin/fraud-rules-dashboard';
+import { RiskDashboard } from '@/components/admin/risk-dashboard';
+import { SecurityAlertsTable } from '@/components/admin/security-alerts-table';
 import { ShieldCheck } from 'lucide-react';
 
 export default function SecurityPage() {
@@ -14,18 +18,28 @@ export default function SecurityPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="audit-logs" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="fraud-rules">Fraud Rules</TabsTrigger>
+          <TabsTrigger value="risk">Risk Analysis</TabsTrigger>
+          <TabsTrigger value="alerts">Alerts</TabsTrigger>
           <TabsTrigger value="audit-logs">Audit Log</TabsTrigger>
-          <TabsTrigger value="user-security">User Security</TabsTrigger>
         </TabsList>
+        <TabsContent value="overview" className="space-y-4">
+          <SecurityOverview />
+        </TabsContent>
+        <TabsContent value="fraud-rules" className="space-y-4">
+          <FraudRulesDashboard />
+        </TabsContent>
+        <TabsContent value="risk" className="space-y-4">
+          <RiskDashboard />
+        </TabsContent>
+        <TabsContent value="alerts" className="space-y-4">
+          <SecurityAlertsTable />
+        </TabsContent>
         <TabsContent value="audit-logs" className="space-y-4">
           <AuditLogTable />
-        </TabsContent>
-        <TabsContent value="user-security" className="space-y-4">
-          <div className="text-center py-12 text-muted-foreground">
-            User security management coming soon.
-          </div>
         </TabsContent>
       </Tabs>
     </div>

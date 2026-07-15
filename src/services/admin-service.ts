@@ -94,9 +94,10 @@ export const adminService = {
     return response.data;
   },
 
-  // const response = await apiClient.delete(`/marketplace/ads/${id}`);
-  // return response.data;
-  // },
+  deleteAd: async (id: string) => {
+    const response = await apiClient.delete(`/marketplace/ads/${id}`);
+    return response.data;
+  },
 
   getOrders: async (page = 1, limit = 10, search?: string) => {
     const response = await apiClient.get('/admin/orders', { params: { page, limit, search } });
@@ -124,6 +125,18 @@ export const adminService = {
   },
 };
 
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+  };
+}
 
 export interface AdminAd {
   id: string;

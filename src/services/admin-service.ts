@@ -16,9 +16,6 @@ export interface AdminWallet {
   updatedAt: string;
 }
 
-//   };
-// }
-
 export interface AdminOrder {
   id: string;
   buyerId: string;
@@ -51,6 +48,38 @@ export interface AdminOrder {
   };
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+  };
+}
+
+export interface AdminAd {
+  id: string;
+  sellerId: string;
+  asset: string;
+  type: 'BUY' | 'SELL';
+  price: number;
+  quantity: number;
+  minLimit: number;
+  maxLimit: number;
+  isSponsored: boolean;
+  status: string;
+  createdAt: string;
+  seller: {
+    id: string;
+    profile: {
+      firstName: string;
+      kycStatus: string;
+    };
+  };
+}
 
 export const adminService = {
   getUsers: async (page = 1, limit = 10, search?: string) => {
@@ -84,7 +113,6 @@ export const adminService = {
   },
 
   getAds: async (page = 1, limit = 10, search?: string) => {
-    // Using the marketplace listings endpoint but adapted for admin
     const response = await apiClient.get('/marketplace/listings', { params: { page, limit, search } });
     return response.data;
   },
@@ -123,38 +151,39 @@ export const adminService = {
     const response = await apiClient.get('/admin/blockchain/failed', { params: { page, limit } });
     return response.data;
   },
+
+  retryTransaction: async (transactionId: string) => {
+    const response = await apiClient.post(`/admin/blockchain/failed/${transactionId}/retry`);
+    return response.data;
+  },
+
+  syncAllBalances: async () => {
+    const response = await apiClient.post('/admin/blockchain/sync');
+    return response.data;
+  },
+
+  getExchangeRates: async () => {
+    const response = await apiClient.get('/admin/exchange-rates');
+    return response.data;
+  },
+
+  refreshExchangeRates: async () => {
+    const response = await apiClient.post('/admin/exchange-rates/refresh');
+    return response.data;
+  },
+
+  getWebhookSubscriptions: async () => {
+    const response = await apiClient.get('/admin/webhooks');
+    return response.data;
+  },
+
+  initOutgoingWebhooks: async () => {
+    const response = await apiClient.post('/admin/webhooks/init');
+    return response.data;
+  },
+
+  cancelWebhook: async (subscriptionId: string) => {
+    const response = await apiClient.post(`/admin/webhooks/cancel/${subscriptionId}`);
+    return response.data;
+  },
 };
-
-
-export interface AdminUser {
-  id: string;
-  email: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  profile: {
-    firstName: string;
-    lastName: string;
-  };
-}
-
-export interface AdminAd {
-  id: string;
-  sellerId: string;
-  asset: string;
-  type: 'BUY' | 'SELL';
-  price: number;
-  quantity: number;
-  minLimit: number;
-  maxLimit: number;
-  isSponsored: boolean;
-  status: string;
-  createdAt: string;
-  seller: {
-    id: string;
-    profile: {
-      firstName: string;
-      kycStatus: string;
-    };
-  };
-}

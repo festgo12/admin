@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/services/admin-service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -9,21 +9,24 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function FailedTransactionsTable() {
+  const queryClient = useQueryClient();
+
   const { data: failedData, isLoading, refetch } = useQuery({
     queryKey: ['failed-transactions'],
     queryFn: () => adminService.getFailedTransactions(1, 20),
   });
 
-  const handleRetry = async (txId: string) => {
-    try {
-      // In a real app, you'd call a dedicated retry endpoint
-      // await adminService.retryTransaction(txId);
-      toast.success('Retry sequence initiated');
-      refetch();
-    } catch (error) {
-      toast.error('Failed to retry transaction');
-    }
-  };
+  const retryMutation = useMutation({
+    mutationFn: (txId: string) => adminService.retryTransaction(txId),
+    onSuccess: () => {
+      toast.success('Withdrawal retry initiated successfully');
+      queryClient.invalidateQueries({ queryKey: ['failed-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['blockchain-stats'] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to retry transaction');
+    },
+  });
 
   return (
     <div className="space-y-4">
@@ -73,8 +76,17 @@ export function FailedTransactionsTable() {
                    {tx.metadata?.lastError || 'Unknown Error'}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="outline" onClick={() => handleRetry(tx.id)}>
-                    Retry
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => retryMutation.mutate(tx.id)}
+                    disabled={retryMutation.isPending}
+                  >
+                    {retryMutation.isPending ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Retry'
+                    )}
                   </Button>
                 </TableCell>
               </TableRow>

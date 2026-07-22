@@ -186,4 +186,14 @@ export const adminService = {
     const response = await apiClient.post(`/admin/webhooks/cancel/${subscriptionId}`);
     return response.data;
   },
+
+  getFeeConfigs: async () => {
+    const response = await apiClient.get('/admin/fees');
+    return response.data;
+  },
+
+  updateFeeConfig: async (key: string, value: number) => {
+    const response = await apiClient.patch(`/admin/fees/${key}`, { value });
+    return response.data;
+  },
 };

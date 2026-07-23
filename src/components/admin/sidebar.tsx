@@ -14,7 +14,8 @@ import {
   FileText,
   ShieldCheck,
   LogOut,
-  Bell
+  Bell,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'Notifications', href: '/admin/notifications', icon: Bell },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Security Center', href: '/admin/security', icon: ShieldCheck },
+  { name: 'Help Center', href: '/admin/help-center', icon: HelpCircle },
 ];
 
 export function AdminSidebar() {

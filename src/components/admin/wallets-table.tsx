@@ -58,7 +58,7 @@ export function WalletsTable() {
             {walletsData?.wallets?.map((wallet: AdminWallet) => (
               <TableRow key={wallet.id}>
                 <TableCell>
-                  <p className="font-medium">{wallet.user.profile.firstName} {wallet.user.profile.lastName}</p>
+                  <p className="font-medium">{wallet.user.profile?.firstName ?? 'Unknown'} {wallet.user.profile?.lastName ?? ''}</p>
                   <p className="text-xs text-muted-foreground">{wallet.user.email}</p>
                 </TableCell>
                 <TableCell>

@@ -3,6 +3,7 @@
 import { WalletsTable } from '@/components/admin/wallets-table';
 import { BlockchainMonitoring } from '@/components/admin/blockchain-monitoring';
 import { FailedTransactionsTable } from '@/components/admin/failed-transactions-table';
+import { PlatformFeeWallets } from '@/components/admin/platform-fee-wallets';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function WalletsPage() {
@@ -17,6 +18,7 @@ export default function WalletsPage() {
           <TabsTrigger value="list">Wallet List</TabsTrigger>
           <TabsTrigger value="blockchain">Blockchain Monitoring</TabsTrigger>
           <TabsTrigger value="failed">Failed Queue</TabsTrigger>
+          <TabsTrigger value="platform">Platform Wallets</TabsTrigger>
         </TabsList>
         <TabsContent value="list" className="space-y-4">
           <WalletsTable />
@@ -26,6 +28,9 @@ export default function WalletsPage() {
         </TabsContent>
         <TabsContent value="failed" className="space-y-4">
           <FailedTransactionsTable />
+        </TabsContent>
+        <TabsContent value="platform" className="space-y-4">
+          <PlatformFeeWallets />
         </TabsContent>
       </Tabs>
     </div>

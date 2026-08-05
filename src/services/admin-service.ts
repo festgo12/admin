@@ -196,4 +196,22 @@ export const adminService = {
     const response = await apiClient.patch(`/admin/fees/${key}`, { value });
     return response.data;
   },
+
+  getFeeWallets: async () => {
+    const response = await apiClient.get('/admin/fee-wallets');
+    return response.data;
+  },
+
+  initFeeWallets: async () => {
+    const response = await apiClient.post('/admin/fee-wallets/init');
+    return response.data;
+  },
+
+  sweepFeeWallet: async (currency: string, address: string, amount?: number) => {
+    const response = await apiClient.post(`/admin/fee-wallets/${currency}/sweep`, {
+      address,
+      ...(amount !== undefined && amount > 0 ? { amount } : {}),
+    });
+    return response.data;
+  },
 };

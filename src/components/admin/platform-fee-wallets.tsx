@@ -37,6 +37,12 @@ export function PlatformFeeWallets() {
     refetchInterval: 15000,
   });
 
+  const { data: chainData, isLoading: chainsLoading } = useQuery({
+    queryKey: ['chain-balances'],
+    queryFn: adminService.getChainBalances,
+    refetchInterval: 30000,
+  });
+
   const initMutation = useMutation({
     mutationFn: adminService.initFeeWallets,
     onSuccess: () => {
@@ -49,9 +55,59 @@ export function PlatformFeeWallets() {
   });
 
   const wallets: FeeWallet[] = data?.wallets || [];
+  const masterWallets = chainData?.masterWallets;
+  const chainBalances: { currency: string; address: string; balance: number }[] =
+    chainData?.balances || [];
 
   return (
     <div className="space-y-6">
+      {/* On-chain treasury (master wallet) balances */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-base font-medium">Treasury — Master Wallets (on-chain)</CardTitle>
+            <CardDescription>
+              Live confirmed balances of the platform HD master wallets. Fee wallets are swept here.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {chainsLoading ? (
+            <div className="h-24 w-full animate-pulse bg-muted rounded-md" />
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {chainBalances.map((b) => (
+                  <div key={b.currency} className="rounded-md border border-border p-3">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline">{b.currency}</Badge>
+                      <span className="text-lg font-bold font-mono">
+                        {b.balance.toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                      </span>
+                    </div>
+                    <code className="mt-2 block text-[10px] font-mono text-muted-foreground truncate">
+                      {b.address}
+                    </code>
+                  </div>
+                ))}
+              </div>
+              {masterWallets && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>
+                    <span className="font-medium text-foreground">EVM master:</span>{' '}
+                    <code className="font-mono">{masterWallets.evm}</code>
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">BTC master:</span>{' '}
+                    <code className="font-mono">{masterWallets.btc}</code>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>

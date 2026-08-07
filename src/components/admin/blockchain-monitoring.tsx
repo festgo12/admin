@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Activity, ArrowUpRight, ArrowDownLeft, RefreshCw, DollarSign, Clock, Webhook } from 'lucide-react';
+import { Activity, ArrowUpRight, ArrowDownLeft, RefreshCw, DollarSign, Clock, Radio } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function BlockchainMonitoring() {
@@ -24,19 +24,10 @@ export function BlockchainMonitoring() {
     refetchInterval: 5000,
   });
 
-  const { data: webhookData } = useQuery({
-    queryKey: ['webhook-subscriptions'],
-    queryFn: adminService.getWebhookSubscriptions,
+  const { data: cryptoStatus } = useQuery({
+    queryKey: ['crypto-system-status'],
+    queryFn: adminService.getCryptoSystemStatus,
     refetchInterval: 30000,
-  });
-
-  const syncMutation = useMutation({
-    mutationFn: adminService.syncAllBalances,
-    onSuccess: (data) => {
-      toast.success(`Balance sync complete: ${data.synced}/${data.total} wallets synced, ${data.discrepancies} discrepancies`);
-      queryClient.invalidateQueries({ queryKey: ['blockchain-stats'] });
-    },
-    onError: () => toast.error('Balance sync failed'),
   });
 
   const refreshRatesMutation = useMutation({
@@ -46,15 +37,6 @@ export function BlockchainMonitoring() {
       queryClient.invalidateQueries({ queryKey: ['blockchain-stats'] });
     },
     onError: () => toast.error('Failed to refresh exchange rates'),
-  });
-
-  const initWebhooksMutation = useMutation({
-    mutationFn: adminService.initOutgoingWebhooks,
-    onSuccess: () => {
-      toast.success('Outgoing webhooks initialized');
-      queryClient.invalidateQueries({ queryKey: ['webhook-subscriptions'] });
-    },
-    onError: () => toast.error('Failed to initialize webhooks'),
   });
 
   return (
@@ -129,15 +111,6 @@ export function BlockchainMonitoring() {
               <Clock className="h-4 w-4" />
               Blockchain Health
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending}
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-              Sync Balances
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -160,31 +133,50 @@ export function BlockchainMonitoring() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Webhook className="h-4 w-4" />
-              Webhook Subscriptions
+              <Radio className="h-4 w-4" />
+              Deposit Listener
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => initWebhooksMutation.mutate()}
-              disabled={initWebhooksMutation.isPending}
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${initWebhooksMutation.isPending ? 'animate-spin' : ''}`} />
-              Init
-            </Button>
+            <Badge variant="outline" className="bg-green-500/10 text-green-500">
+              {cryptoStatus?.provider || 'alchemy'}
+            </Badge>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Active Subscriptions</span>
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-500">{webhookData?.total || 0}</Badge>
+                <span className="text-sm text-muted-foreground">Network</span>
+                <span className="text-sm font-medium capitalize">
+                  {cryptoStatus?.network || '—'}
+                  {cryptoStatus?.isTestnet ? ' (testnet)' : ''}
+                </span>
               </div>
-              {webhookData?.byChain && Object.entries(webhookData.byChain).map(([chain, count]) => (
-                <div key={chain} className="flex justify-between">
-                  <span className="text-sm text-muted-foreground capitalize">{chain}</span>
-                  <span className="text-sm font-mono">{count as number}</span>
-                </div>
-              ))}
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Confirmations (ETH / BTC)</span>
+                <span className="text-sm font-mono">
+                  {cryptoStatus ? `${cryptoStatus.confirmations.eth} / ${cryptoStatus.confirmations.btc}` : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Registered Deposit Addresses</span>
+                <Badge variant="outline">{cryptoStatus?.registrySize || 0}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Sweep Threshold</span>
+                <span className="text-sm font-mono">
+                  {cryptoStatus?.depositSweepThreshold ?? 0}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">EVM Cursor (block)</span>
+                <span className="text-sm font-mono">
+                  {cryptoStatus?.cursors?.evm ? cryptoStatus.cursors.evm.lastBlock.toLocaleString() : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">BTC Cursor (block)</span>
+                <span className="text-sm font-mono">
+                  {cryptoStatus?.cursors?.btc ? cryptoStatus.cursors.btc.lastBlock.toLocaleString() : '—'}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -4,6 +4,8 @@ import { WalletsTable } from '@/components/admin/wallets-table';
 import { BlockchainMonitoring } from '@/components/admin/blockchain-monitoring';
 import { FailedTransactionsTable } from '@/components/admin/failed-transactions-table';
 import { PlatformFeeWallets } from '@/components/admin/platform-fee-wallets';
+import { WithdrawalJobsTable } from '@/components/admin/withdrawal-jobs-table';
+import { TestnetFaucet } from '@/components/admin/testnet-faucet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function WalletsPage() {
@@ -17,8 +19,10 @@ export default function WalletsPage() {
         <TabsList>
           <TabsTrigger value="list">Wallet List</TabsTrigger>
           <TabsTrigger value="blockchain">Blockchain Monitoring</TabsTrigger>
+          <TabsTrigger value="withdrawals">Withdrawal Queue</TabsTrigger>
           <TabsTrigger value="failed">Failed Queue</TabsTrigger>
           <TabsTrigger value="platform">Platform Wallets</TabsTrigger>
+          <TabsTrigger value="testnet">Testnet</TabsTrigger>
         </TabsList>
         <TabsContent value="list" className="space-y-4">
           <WalletsTable />
@@ -26,11 +30,17 @@ export default function WalletsPage() {
         <TabsContent value="blockchain" className="space-y-4">
           <BlockchainMonitoring />
         </TabsContent>
+        <TabsContent value="withdrawals" className="space-y-4">
+          <WithdrawalJobsTable />
+        </TabsContent>
         <TabsContent value="failed" className="space-y-4">
           <FailedTransactionsTable />
         </TabsContent>
         <TabsContent value="platform" className="space-y-4">
           <PlatformFeeWallets />
+        </TabsContent>
+        <TabsContent value="testnet" className="space-y-4">
+          <TestnetFaucet />
         </TabsContent>
       </Tabs>
     </div>

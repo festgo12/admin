@@ -81,6 +81,52 @@ export interface AdminAd {
   };
 }
 
+export interface ChainCursorInfo {
+  chain: string;
+  lastBlock: number;
+  lastBlockHash: string | null;
+  updatedAt: string;
+}
+
+export interface CryptoSystemStatus {
+  provider: string;
+  network: string;
+  isTestnet: boolean;
+  confirmations: { eth: number; btc: number };
+  depositSweepThreshold: number;
+  registrySize: number;
+  cursors: { evm: ChainCursorInfo | null; btc: ChainCursorInfo | null };
+  masterWallets: { evm: string; btc: string };
+  recentSweeps: {
+    id: string;
+    amount: number;
+    status: string;
+    reference: string;
+    createdAt: string;
+    wallet: { currency: string };
+  }[];
+}
+
+export interface WithdrawalJob {
+  id: string;
+  txHash: string;
+  walletId: string;
+  currency: string;
+  amount: number;
+  destination: string;
+  status: string;
+  attempts: number;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChainBalance {
+  currency: string;
+  address: string;
+  balance: number;
+}
+
 export const adminService = {
   getUsers: async (page = 1, limit = 10, search?: string) => {
     const response = await apiClient.get('/admin/users', { params: { page, limit, search } });
@@ -157,11 +203,6 @@ export const adminService = {
     return response.data;
   },
 
-  syncAllBalances: async () => {
-    const response = await apiClient.post('/admin/blockchain/sync');
-    return response.data;
-  },
-
   getExchangeRates: async () => {
     const response = await apiClient.get('/admin/exchange-rates');
     return response.data;
@@ -172,18 +213,20 @@ export const adminService = {
     return response.data;
   },
 
-  getWebhookSubscriptions: async () => {
-    const response = await apiClient.get('/admin/webhooks');
+  getCryptoSystemStatus: async () => {
+    const response = await apiClient.get('/admin/crypto/status');
     return response.data;
   },
 
-  initOutgoingWebhooks: async () => {
-    const response = await apiClient.post('/admin/webhooks/init');
+  getWithdrawalJobs: async (page = 1, limit = 20, status?: string) => {
+    const response = await apiClient.get('/admin/crypto/withdrawal-jobs', {
+      params: { page, limit, ...(status ? { status } : {}) },
+    });
     return response.data;
   },
 
-  cancelWebhook: async (subscriptionId: string) => {
-    const response = await apiClient.post(`/admin/webhooks/cancel/${subscriptionId}`);
+  getChainBalances: async () => {
+    const response = await apiClient.get('/admin/crypto/chain-balances');
     return response.data;
   },
 
@@ -211,6 +254,15 @@ export const adminService = {
     const response = await apiClient.post(`/admin/fee-wallets/${currency}/sweep`, {
       address,
       ...(amount !== undefined && amount > 0 ? { amount } : {}),
+    });
+    return response.data;
+  },
+
+  creditTestFunds: async (email: string, currency: string, amount: number) => {
+    const response = await apiClient.post('/admin/testnet/credit', {
+      email,
+      currency,
+      amount,
     });
     return response.data;
   },

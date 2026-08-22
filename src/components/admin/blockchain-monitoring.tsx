@@ -39,6 +39,23 @@ export function BlockchainMonitoring() {
     onError: () => toast.error('Failed to refresh exchange rates'),
   });
 
+  const reconcileMutation = useMutation({
+    mutationFn: adminService.reconcileAll,
+    onSuccess: (data) => {
+      const summary = data?.summary || data;
+      const parts: string[] = [];
+      if (summary.resolved) parts.push(`${summary.resolved} resolved`);
+      if (summary.missed) parts.push(`${summary.missed} missed`);
+      if (summary.rollbacks) parts.push(`${summary.rollbacks} rollbacks`);
+      if (summary.pending) parts.push(`${summary.pending} pending`);
+      const detail = parts.length > 0 ? `: ${parts.join(', ')}` : '';
+      toast.success(`Reconciliation complete${detail}`);
+      queryClient.invalidateQueries({ queryKey: ['crypto-system-status'] });
+      queryClient.invalidateQueries({ queryKey: ['blockchain-transactions'] });
+    },
+    onError: () => toast.error('Reconciliation failed — check server logs'),
+  });
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -136,9 +153,20 @@ export function BlockchainMonitoring() {
               <Radio className="h-4 w-4" />
               Deposit Listener
             </CardTitle>
-            <Badge variant="outline" className="bg-green-500/10 text-green-500">
-              {cryptoStatus?.provider || 'alchemy'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                {cryptoStatus?.provider || 'alchemy'}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => reconcileMutation.mutate()}
+                disabled={reconcileMutation.isPending}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${reconcileMutation.isPending ? 'animate-spin' : ''}`} />
+                Sync BTC
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

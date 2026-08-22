@@ -266,4 +266,33 @@ export const adminService = {
     });
     return response.data;
   },
+
+  reconcileAll: async () => {
+    const response = await apiClient.post('/admin/crypto/reconcile');
+    return response.data;
+  },
+
+  reconcileCurrency: async (currency: string) => {
+    const response = await apiClient.post(`/admin/crypto/reconcile/${currency}`);
+    return response.data;
+  },
+
+  sweepAll: async () => {
+    const response = await apiClient.post('/admin/crypto/sweep-all');
+    return response.data;
+  },
+
+  getBtcHistory: async (page = 1, pageSize = 50) => {
+    const response = await apiClient.get('/admin/crypto/btc-history', {
+      params: { page, pageSize },
+    });
+    return response.data;
+  },
+
+  getEvmHistory: async (address: string, page = 1) => {
+    const response = await apiClient.get(`/admin/crypto/evm-history/${address}`, {
+      params: { page },
+    });
+    return response.data;
+  },
 };

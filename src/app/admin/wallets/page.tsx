@@ -6,6 +6,7 @@ import { FailedTransactionsTable } from '@/components/admin/failed-transactions-
 import { PlatformFeeWallets } from '@/components/admin/platform-fee-wallets';
 import { WithdrawalJobsTable } from '@/components/admin/withdrawal-jobs-table';
 import { TestnetFaucet } from '@/components/admin/testnet-faucet';
+import { OnChainHistory } from '@/components/admin/on-chain-history';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function WalletsPage() {
@@ -23,6 +24,7 @@ export default function WalletsPage() {
           <TabsTrigger value="failed">Failed Queue</TabsTrigger>
           <TabsTrigger value="platform">Platform Wallets</TabsTrigger>
           <TabsTrigger value="testnet">Testnet</TabsTrigger>
+          <TabsTrigger value="onchain">On-Chain History</TabsTrigger>
         </TabsList>
         <TabsContent value="list" className="space-y-4">
           <WalletsTable />
@@ -41,6 +43,9 @@ export default function WalletsPage() {
         </TabsContent>
         <TabsContent value="testnet" className="space-y-4">
           <TestnetFaucet />
+        </TabsContent>
+        <TabsContent value="onchain" className="space-y-4">
+          <OnChainHistory />
         </TabsContent>
       </Tabs>
     </div>

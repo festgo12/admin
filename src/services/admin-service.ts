@@ -81,13 +81,6 @@ export interface AdminAd {
   };
 }
 
-export interface ChainCursorInfo {
-  chain: string;
-  lastBlock: number;
-  lastBlockHash: string | null;
-  updatedAt: string;
-}
-
 export interface CryptoSystemStatus {
   provider: string;
   network: string;
@@ -95,7 +88,7 @@ export interface CryptoSystemStatus {
   confirmations: { eth: number; btc: number };
   depositSweepThreshold: number;
   registrySize: number;
-  cursors: { evm: ChainCursorInfo | null; btc: ChainCursorInfo | null };
+  webhookProviders: { evm: string; btc: string };
   masterWallets: { evm: string; btc: string };
   recentSweeps: {
     id: string;
@@ -128,6 +121,11 @@ export interface ChainBalance {
 }
 
 export const adminService = {
+  getDashboardStats: async () => {
+    const response = await apiClient.get('/admin/stats');
+    return response.data;
+  },
+
   getUsers: async (page = 1, limit = 10, search?: string) => {
     const response = await apiClient.get('/admin/users', { params: { page, limit, search } });
     return response.data;
@@ -164,12 +162,12 @@ export const adminService = {
   },
 
   updateAd: async (id: string, data: any) => {
-    const response = await apiClient.put(`/marketplace/ads/${id}`, data);
+    const response = await apiClient.patch(`/admin/ads/${id}`, data);
     return response.data;
   },
 
   deleteAd: async (id: string) => {
-    const response = await apiClient.delete(`/marketplace/ads/${id}`);
+    const response = await apiClient.delete(`/admin/ads/${id}`);
     return response.data;
   },
 
@@ -180,6 +178,16 @@ export const adminService = {
 
   getOrderDetail: async (orderId: string) => {
     const response = await apiClient.get(`/admin/orders/${orderId}`);
+    return response.data;
+  },
+
+  flagOrder: async (orderId: string) => {
+    const response = await apiClient.patch(`/admin/orders/${orderId}/flag`);
+    return response.data;
+  },
+
+  releaseOrder: async (orderId: string) => {
+    const response = await apiClient.patch(`/admin/orders/${orderId}/release`);
     return response.data;
   },
 

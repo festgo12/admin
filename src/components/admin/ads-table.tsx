@@ -40,6 +40,9 @@ export function AdsTable() {
       queryClient.invalidateQueries({ queryKey: ['admin-ads'] });
       toast.success('Advertisement deleted');
     },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete advertisement');
+    },
   });
 
   if (isLoading) {

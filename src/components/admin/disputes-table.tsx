@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Search, MoreHorizontal, Eye, AlertTriangle, UserCheck, Snowflake } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { DisputeDetailDialog } from './dispute-detail-dialog';
+import { useAuth } from '@/providers/auth-provider';
 import { toast } from 'sonner';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
@@ -48,6 +49,7 @@ function getStatusBadge(status: string) {
 
 export function DisputesTable() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
@@ -219,8 +221,9 @@ export function DisputesTable() {
                         {!dispute.assigneeId && (
                           <DropdownMenuItem
                             onClick={() => {
-                              // Auto-assign would need current admin ID from auth context
-                              toast.info('Assign via the detail view');
+                              if (user?.id) {
+                                assignMutation.mutate({ disputeId: dispute.id, assigneeId: user.id });
+                              }
                             }}
                           >
                             <UserCheck className="mr-2 h-4 w-4" /> Assign to Me

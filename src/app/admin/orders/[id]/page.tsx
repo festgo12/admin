@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/services/admin-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,14 +9,38 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ArrowRight, User, Wallet, History, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function OrderDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const queryClient = useQueryClient();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['admin-order', id],
     queryFn: () => adminService.getOrderDetail(id),
+  });
+
+  const flagMutation = useMutation({
+    mutationFn: () => adminService.flagOrder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-order', id] });
+      toast.success('Order flagged for review');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to flag order');
+    },
+  });
+
+  const releaseMutation = useMutation({
+    mutationFn: () => adminService.releaseOrder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-order', id] });
+      toast.success('Fraud flag removed');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to release order');
+    },
   });
 
   if (isLoading) {
@@ -144,12 +168,30 @@ export default function OrderDetailPage() {
               <CardTitle className="text-sm">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full text-xs" disabled>
-                Flag for Review
-              </Button>
-              <Button variant="outline" className="w-full text-xs text-destructive hover:bg-destructive/10" disabled>
-                Force Release (Caution)
-              </Button>
+              {!order.fraudFlagged ? (
+                <Button
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => flagMutation.mutate()}
+                  disabled={flagMutation.isPending}
+                >
+                  {flagMutation.isPending ? 'Flagging...' : 'Flag for Review'}
+                </Button>
+              ) : (
+                <>
+                  <Badge variant="destructive" className="w-full justify-center py-1">
+                    <AlertCircle className="h-3 w-3 mr-1" /> Flagged for Review
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    className="w-full text-xs text-destructive hover:bg-destructive/10"
+                    onClick={() => releaseMutation.mutate()}
+                    disabled={releaseMutation.isPending}
+                  >
+                    {releaseMutation.isPending ? 'Releasing...' : 'Remove Flag (Release)'}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

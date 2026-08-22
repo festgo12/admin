@@ -30,6 +30,9 @@ export function UsersTable() {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast.success('User status updated');
     },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update user status');
+    },
   });
 
   if (isLoading) {

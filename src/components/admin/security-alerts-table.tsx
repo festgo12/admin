@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminSecurityService, SecurityAlert, AlertStats } from '@/services/admin-security-service';
+import { adminSecurityService, AlertStats } from '@/services/admin-security-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,9 @@ export function SecurityAlertsTable() {
       queryClient.invalidateQueries({ queryKey: ['admin-security-alerts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-security-alert-stats'] });
       toast.success('Alert marked as read');
+    },
+    onError: () => {
+      toast.error('Failed to mark alert as read');
     },
   });
 
@@ -166,6 +169,33 @@ export function SecurityAlertsTable() {
               ))}
             </div>
           </div>
+          {stats?.topTypes && stats.topTypes.length > 0 && (
+            <div className="flex gap-1 bg-muted rounded-md p-1 flex-wrap">
+              <button
+                onClick={() => { setTypeFilter(''); setPage(1); }}
+                className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
+                  typeFilter === ''
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                All Types
+              </button>
+              {stats.topTypes.map((t) => (
+                <button
+                  key={t.type}
+                  onClick={() => { setTypeFilter(t.type); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
+                    typeFilter === t.type
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t.type} ({t.count})
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="rounded-md border border-border">
             <Table>

@@ -52,7 +52,7 @@ export function ReportDataTable({ title, headers, rows, loading }: DataTableProp
                               }
                             })()
                           : typeof cell === 'number'
-                            ? `₦${cell.toLocaleString()}`
+                            ? cell.toLocaleString()
                             : cell}
                       </TableCell>
                     ))}

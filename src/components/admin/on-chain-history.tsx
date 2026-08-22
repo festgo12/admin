@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin-service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowUpRight, ArrowDownLeft, Search, Database, ExternalLink } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Search, Database } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function OnChainHistory() {
   const [evmAddress, setEvmAddress] = useState('');
@@ -31,10 +32,13 @@ export function OnChainHistory() {
 
   const handleEvmSearch = () => {
     const addr = evmAddressInput.trim();
-    if (addr) {
-      setEvmAddress(addr);
-      setEvmPage(1);
+    if (!addr) return;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) {
+      toast.error('Invalid Ethereum address. Must be 0x followed by 40 hex characters.');
+      return;
     }
+    setEvmAddress(addr);
+    setEvmPage(1);
   };
 
   return (

@@ -194,15 +194,15 @@ export function BlockchainMonitoring() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">EVM Cursor (block)</span>
+                <span className="text-sm text-muted-foreground">EVM Webhook Provider</span>
                 <span className="text-sm font-mono">
-                  {cryptoStatus?.cursors?.evm ? cryptoStatus.cursors.evm.lastBlock.toLocaleString() : '—'}
+                  {cryptoStatus?.webhookProviders?.evm || '—'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">BTC Cursor (block)</span>
+                <span className="text-sm text-muted-foreground">BTC Webhook Provider</span>
                 <span className="text-sm font-mono">
-                  {cryptoStatus?.cursors?.btc ? cryptoStatus.cursors.btc.lastBlock.toLocaleString() : '—'}
+                  {cryptoStatus?.webhookProviders?.btc || '—'}
                 </span>
               </div>
             </div>

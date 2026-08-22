@@ -27,7 +27,8 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  GripVertical,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -95,6 +96,21 @@ export function HelpCenterManager() {
       queryClient.invalidateQueries({ queryKey: ['admin-help-content'] });
       toast.success('Visibility updated');
     },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to update visibility');
+    },
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async ({ items }: { items: { id: string; sortOrder: number }[] }) => {
+      await Promise.all(items.map((i) => helpCenterService.updateItem(i.id, { sortOrder: i.sortOrder })));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-help-content'] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to reorder');
+    },
   });
 
   const filteredItems = items.filter((item) => {
@@ -109,6 +125,8 @@ export function HelpCenterManager() {
     return true;
   });
 
+  const sortedItems = [...filteredItems].sort((a, b) => a.sortOrder - b.sortOrder);
+
   const stats = {
     total: items.length,
     active: items.filter((i) => i.active).length,
@@ -121,7 +139,8 @@ export function HelpCenterManager() {
     setFormCategory('FAQ');
     setFormTitle('');
     setFormContent('');
-    setFormSortOrder('0');
+    const maxSort = items.reduce((max, i) => Math.max(max, i.sortOrder), 0);
+    setFormSortOrder(String(maxSort + 1));
     setDialogOpen(true);
   }
 
@@ -137,6 +156,20 @@ export function HelpCenterManager() {
   function closeDialog() {
     setDialogOpen(false);
     setEditingItem(null);
+  }
+
+  function handleMove(itemIndex: number, direction: 'up' | 'down') {
+    const currentIndex = sortedItems.findIndex((i) => i.id === filteredItems[itemIndex].id);
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (swapIndex < 0 || swapIndex >= sortedItems.length) return;
+    const a = sortedItems[currentIndex];
+    const b = sortedItems[swapIndex];
+    reorderMutation.mutate({
+      items: [
+        { id: a.id, sortOrder: b.sortOrder },
+        { id: b.id, sortOrder: a.sortOrder },
+      ],
+    });
   }
 
   function handleSubmit() {
@@ -261,7 +294,7 @@ export function HelpCenterManager() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10"></TableHead>
+              <TableHead className="w-20"></TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Content</TableHead>
@@ -280,10 +313,29 @@ export function HelpCenterManager() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredItems.map((item) => (
+              sortedItems.map((item, idx) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    <GripVertical className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        disabled={idx === 0 || reorderMutation.isPending}
+                        onClick={() => handleMove(idx, 'up')}
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        disabled={idx === sortedItems.length - 1 || reorderMutation.isPending}
+                        onClick={() => handleMove(idx, 'down')}
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge

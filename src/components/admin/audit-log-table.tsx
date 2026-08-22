@@ -93,7 +93,7 @@ export function AuditLogTable() {
     queryFn: () => auditService.getAuditStats(),
   });
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['admin-audit-logs', page, filters],
     queryFn: () => auditService.getAuditLogs(page, PAGE_SIZE, filters),
   });
@@ -163,7 +163,7 @@ export function AuditLogTable() {
           Track every sensitive operation across the platform.
         </p>
         <Button
-          onClick={() => {}}
+          onClick={() => refetch()}
           variant="outline"
           size="sm"
           className="gap-2"

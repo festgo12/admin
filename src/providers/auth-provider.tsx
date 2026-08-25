@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthResponse } from '@/types/auth';
 import { authService } from '@/services/auth-service';
@@ -19,8 +19,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-
-
   useEffect(() => {
     const checkPersistedAuth = async () => {
       try {
@@ -30,10 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const user = await authService.getProfile();
           setUser(user);
         }
-      } catch (error) {
-        // localStorage.removeItem("accessToken");
+      } catch {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
       } finally {
-        setIsLoading(false); // 3. Turning off loading lets the UI render
+        setIsLoading(false);
       }
     };
 
@@ -47,12 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/admin');
   };
 
-  const logout = () => {
+  const logout = useCallback(async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    try {
+      if (refreshToken) {
+        await authService.logout(refreshToken);
+      }
+    } catch {
+      // Best-effort server revocation — clear locally regardless
+    }
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
     router.push('/');
-  };
+  }, [router]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout }}>

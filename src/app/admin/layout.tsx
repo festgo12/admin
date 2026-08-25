@@ -5,6 +5,8 @@ import { useAuth } from '@/providers/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN'];
+
 export default function AdminLayout({
   children,
 }: {
@@ -17,7 +19,8 @@ export default function AdminLayout({
     if (!isLoading) {
       if (!user) {
         router.replace("/");
-        // router.push('/');
+      } else if (!ADMIN_ROLES.includes(user.role)) {
+        router.replace("/");
       }
     }
   }, [user, isLoading, router]);
@@ -30,7 +33,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!user) return null;
+  if (!user || !ADMIN_ROLES.includes(user.role)) return null;
 
   return (
     <div className="flex min-h-screen bg-background">

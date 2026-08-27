@@ -38,7 +38,9 @@ export interface DisputeOrder {
 
 export interface Dispute {
   id: string;
-  orderId: string;
+  orderId: string | null;
+  subjectType: string;
+  reference: string | null;
   initiatorId: string;
   reason: string;
   description: string | null;
@@ -48,7 +50,7 @@ export interface Dispute {
   deadline: string | null;
   createdAt: string;
   updatedAt: string;
-  order: DisputeOrder;
+  order: DisputeOrder | null;
   initiator: {
     id: string;
     email: string;
@@ -97,7 +99,7 @@ export const disputeService = {
       search?: string;
     },
   ): Promise<{ disputes: Dispute[]; meta: DisputeMeta }> => {
-    const params: Record<string, any> = { page, limit };
+    const params: Record<string, unknown> = { page, limit };
     if (filters?.status) params.status = filters.status;
     if (filters?.assigneeId) params.assigneeId = filters.assigneeId;
     if (filters?.startDate) params.startDate = filters.startDate;

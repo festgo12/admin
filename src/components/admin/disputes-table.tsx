@@ -176,10 +176,23 @@ export function DisputesTable() {
                     <p className="text-xs text-muted-foreground">{dispute.initiator.email}</p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-mono text-xs">{dispute.orderId.slice(0, 8)}...</p>
-                    <p className="text-xs text-muted-foreground">
-                      {Number(dispute.order.fiatAmount).toLocaleString()} NGN / {dispute.order.cryptoAmount} {dispute.order.ad.asset}
-                    </p>
+                    {dispute.orderId ? (
+                      <>
+                        <p className="font-mono text-xs">{dispute.orderId.slice(0, 8)}...</p>
+                        <p className="text-xs text-muted-foreground">
+                          {Number(dispute.order?.fiatAmount).toLocaleString()} NGN / {dispute.order?.cryptoAmount} {dispute.order?.ad?.asset}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-mono text-xs">{dispute.subjectType}</p>
+                        {dispute.reference && (
+                          <p className="text-xs text-muted-foreground truncate max-w-[140px]">
+                            {dispute.reference}
+                          </p>
+                        )}
+                      </>
+                    )}
                   </TableCell>
                   <TableCell>
                     <p className="text-sm max-w-[180px] truncate" title={dispute.reason}>

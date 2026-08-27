@@ -227,17 +227,34 @@ export function DisputeDetailDialog({ disputeId, open, onOpenChange }: DisputeDe
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                      <ShoppingBag className="h-3 w-3" /> Order
+                      <ShoppingBag className="h-3 w-3" /> {dispute.order ? 'Order' : 'Subject'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="font-mono text-xs">{dispute.orderId}</p>
-                    <p className="text-sm font-bold mt-1">
-                      {Number(dispute.order.fiatAmount).toLocaleString()} NGN
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {dispute.order.cryptoAmount} {dispute.order.ad.asset}
-                    </p>
+                    {dispute.order ? (
+                      <>
+                        <p className="font-mono text-xs">{dispute.orderId}</p>
+                        <p className="text-sm font-bold mt-1">
+                          {Number(dispute.order.fiatAmount).toLocaleString()} NGN
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {dispute.order.cryptoAmount} {dispute.order.ad.asset}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-mono text-xs">{dispute.subjectType}</p>
+                        {dispute.reference ? (
+                          <p className="text-xs text-muted-foreground mt-1 break-all">
+                            {dispute.reference}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            No order linked
+                          </p>
+                        )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -464,7 +481,7 @@ export function DisputeDetailDialog({ disputeId, open, onOpenChange }: DisputeDe
                         </Card>
                       )}
 
-                      {dispute.order.status !== 'DISPUTED' && dispute.order.status !== 'COMPLETED' && dispute.order.status !== 'CANCELLED' && (
+                      {dispute.order && dispute.order.status !== 'DISPUTED' && dispute.order.status !== 'COMPLETED' && dispute.order.status !== 'CANCELLED' && (
                         <Button
                           variant="outline"
                           onClick={() => freezeMutation.mutate()}

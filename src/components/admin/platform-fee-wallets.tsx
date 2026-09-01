@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { RefreshCw, Send, Copy, Check } from 'lucide-react';
+import { RefreshCw, Send, Copy, Check, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FeeWallet {
@@ -22,6 +22,19 @@ interface FeeWallet {
   available: number;
   ledgerEntryCount: number;
   updatedAt: string;
+}
+
+interface SweepAllResult {
+  success?: boolean;
+  message?: string;
+  swept?: number;
+  summary?: {
+    evmSwept?: number;
+    btcSwept?: number;
+    evmSkipped?: number;
+    btcSkipped?: number;
+    errors?: string[];
+  };
 }
 
 interface ApiError {
@@ -51,6 +64,30 @@ export function PlatformFeeWallets() {
     },
     onError: (error: ApiError) => {
       toast.error(error.response?.data?.message || 'Failed to initialize platform wallets');
+    },
+  });
+
+  const sweepAllMutation = useMutation({
+    mutationFn: adminService.sweepAll,
+    onSuccess: (result: SweepAllResult) => {
+      const summary = result.summary;
+      if (summary && (summary.evmSwept || summary.btcSwept)) {
+        toast.success(
+          `Swept ${summary.evmSwept ?? 0} EVM + ${summary.btcSwept ?? 0} BTC address(es) into the platform wallet`,
+        );
+      } else if (result.message) {
+        toast.success(result.message);
+      } else {
+        toast.success('Sweep completed — no qualifying addresses');
+      }
+      if (summary?.errors?.length) {
+        toast.error(`${summary.errors.length} address(es) failed to sweep`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['platform-fee-wallets'] });
+      queryClient.invalidateQueries({ queryKey: ['chain-balances'] });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.response?.data?.message || 'Sweep all failed');
     },
   });
 
@@ -116,15 +153,27 @@ export function PlatformFeeWallets() {
               Ledger homes for platform fee revenue. Use init to create or assign addresses.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => initMutation.mutate()}
-            disabled={initMutation.isPending}
-          >
-            <RefreshCw className={`h-4 w-4 mr-1 ${initMutation.isPending ? 'animate-spin' : ''}`} />
-            Init Wallets
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => sweepAllMutation.mutate()}
+              disabled={sweepAllMutation.isPending}
+              title="Consolidate all deposit addresses above the threshold into the platform wallet"
+            >
+              <ArrowUpRight className={`h-4 w-4 mr-1 ${sweepAllMutation.isPending ? 'animate-pulse' : ''}`} />
+              {sweepAllMutation.isPending ? 'Sweeping...' : 'Sweep All to Platform'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => initMutation.mutate()}
+              disabled={initMutation.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${initMutation.isPending ? 'animate-spin' : ''}`} />
+              Init Wallets
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (

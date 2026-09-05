@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Loader2 } from 'lucide-react';
+import { ChainBadge } from '@/components/ui/chain-badge';
 
 const STATUSES = ['PENDING', 'CONFIRMED', 'FAILED', 'EXPIRED'];
 
@@ -83,6 +84,7 @@ export function WithdrawalJobsTable() {
                 <TableRow>
                   <TableHead>TxHash</TableHead>
                   <TableHead>Currency</TableHead>
+                  <TableHead>Chain</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Destination</TableHead>
                   <TableHead>Status</TableHead>
@@ -99,6 +101,9 @@ export function WithdrawalJobsTable() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{job.currency}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <ChainBadge chain={job.chain} />
                     </TableCell>
                     <TableCell className="font-mono">{job.amount.toLocaleString()}</TableCell>
                     <TableCell className="font-mono text-[10px] max-w-[140px] truncate">

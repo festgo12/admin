@@ -3,6 +3,7 @@ import apiClient from '@/lib/api-client';
 export interface AdminWallet {
   id: string;
   currency: string;
+  chain?: string | null;
   balance: number;
   reservedBalance: number;
   address?: string;
@@ -26,6 +27,7 @@ export interface AdminOrder {
   cryptoAmount: number;
   feeAmount: number;
   fraudFlagged: boolean;
+  chain?: string | null;
   createdAt: string;
   updatedAt: string;
   buyer: {
@@ -45,6 +47,7 @@ export interface AdminOrder {
   ad: {
     asset: string;
     price: number;
+    chain?: string | null;
   };
 }
 
@@ -105,6 +108,7 @@ export interface WithdrawalJob {
   txHash: string;
   walletId: string;
   currency: string;
+  chain?: string | null;
   amount: number;
   destination: string;
   status: string;
@@ -118,6 +122,42 @@ export interface ChainBalance {
   currency: string;
   address: string;
   balance: number;
+}
+
+export interface SweepConfigItem {
+  chain: string;
+  enabled: boolean;
+  thresholdUsd: number | null;
+  usesGlobalThreshold: boolean;
+}
+
+export interface SweepConfigResponse {
+  globalThresholdUsd: number;
+  chains: SweepConfigItem[];
+}
+
+export interface SweepSummary {
+  evmSwept: number;
+  btcSwept: number;
+  solSwept: number;
+  tronSwept: number;
+  evmSkipped: number;
+  btcSkipped: number;
+  solSkipped: number;
+  tronSkipped: number;
+  errors: string[];
+  sweptByChain: Record<string, number>;
+  skippedByChain: Record<string, number>;
+}
+
+export interface EvmPullResult {
+  chain: string;
+  address: string;
+  found: number;
+  credited: number;
+  alreadyRecorded: number;
+  skipped: string[];
+  errors: string[];
 }
 
 export const adminService = {
@@ -141,8 +181,22 @@ export const adminService = {
     return response.data;
   },
 
-  getWallets: async (page = 1, limit = 10, search?: string) => {
-    const response = await apiClient.get('/admin/wallets', { params: { page, limit, search } });
+  getWallets: async (
+    page = 1,
+    limit = 10,
+    search?: string,
+    currency?: string,
+    chain?: string,
+  ) => {
+    const response = await apiClient.get('/admin/wallets', {
+      params: {
+        page,
+        limit,
+        search,
+        ...(currency ? { currency } : {}),
+        ...(chain ? { chain } : {}),
+      },
+    });
     return response.data;
   },
 
@@ -151,8 +205,20 @@ export const adminService = {
     return response.data;
   },
 
-  getTransactions: async (page = 1, limit = 10) => {
-    const response = await apiClient.get('/admin/transactions', { params: { page, limit } });
+  getTransactions: async (
+    page = 1,
+    limit = 10,
+    currency?: string,
+    chain?: string,
+  ) => {
+    const response = await apiClient.get('/admin/transactions', {
+      params: {
+        page,
+        limit,
+        ...(currency ? { currency } : {}),
+        ...(chain ? { chain } : {}),
+      },
+    });
     return response.data;
   },
 
@@ -171,8 +237,10 @@ export const adminService = {
     return response.data;
   },
 
-  getOrders: async (page = 1, limit = 10, search?: string) => {
-    const response = await apiClient.get('/admin/orders', { params: { page, limit, search } });
+  getOrders: async (page = 1, limit = 10, search?: string, chain?: string) => {
+    const response = await apiClient.get('/admin/orders', {
+      params: { page, limit, search, ...(chain ? { chain } : {}) },
+    });
     return response.data;
   },
 
@@ -196,8 +264,10 @@ export const adminService = {
     return response.data;
   },
 
-  getBlockchainTransactions: async (page = 1, limit = 10) => {
-    const response = await apiClient.get('/admin/blockchain/transactions', { params: { page, limit } });
+  getBlockchainTransactions: async (page = 1, limit = 10, chain?: string) => {
+    const response = await apiClient.get('/admin/blockchain/transactions', {
+      params: { page, limit, ...(chain ? { chain } : {}) },
+    });
     return response.data;
   },
 
@@ -297,10 +367,47 @@ export const adminService = {
     return response.data;
   },
 
-  getEvmHistory: async (address: string, page = 1) => {
+  getEvmHistory: async (address: string, page = 1, chain = 'ETH') => {
     const response = await apiClient.get(`/admin/crypto/evm-history/${address}`, {
+      params: { page, chain },
+    });
+    return response.data;
+  },
+
+  getTronHistory: async (address: string, page = 1) => {
+    const response = await apiClient.get(`/admin/crypto/tron-history/${address}`, {
       params: { page },
     });
+    return response.data;
+  },
+
+  getSolHistory: async (address: string, page = 1) => {
+    const response = await apiClient.get(`/admin/crypto/sol-history/${address}`, {
+      params: { page },
+    });
+    return response.data;
+  },
+
+  getSweepConfig: async () => {
+    const response = await apiClient.get('/admin/crypto/sweep-config');
+    return response.data;
+  },
+
+  updateSweepConfig: async (
+    chain: string,
+    changes: { enabled?: boolean; thresholdUsd?: number | null },
+  ) => {
+    const response = await apiClient.patch(`/admin/crypto/sweep-config/${chain}`, changes);
+    return response.data;
+  },
+
+  sweepChain: async (chain: string) => {
+    const response = await apiClient.post(`/admin/crypto/sweep/${chain}`);
+    return response.data;
+  },
+
+  evmPull: async (chain: string, address: string) => {
+    const response = await apiClient.post(`/admin/crypto/evm-pull/${chain}/${address}`);
     return response.data;
   },
 };

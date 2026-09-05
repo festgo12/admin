@@ -9,14 +9,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Search, Eye } from 'lucide-react';
 import { WalletDetailsDialog } from './wallet-details-dialog';
+import { ChainBadge, ChainSelect } from '@/components/ui/chain-badge';
+
+const WALLET_CURRENCIES = ['NGN', 'BTC', 'ETH', 'USDT', 'USDC'];
 
 export function WalletsTable() {
   const [search, setSearch] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [chain, setChain] = useState('');
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
 
   const { data: walletsData, isLoading } = useQuery({
-    queryKey: ['admin-wallets', search],
-    queryFn: () => adminService.getWallets(1, 40, search),
+    queryKey: ['admin-wallets', search, currency, chain],
+    queryFn: () => adminService.getWallets(1, 40, search, currency || undefined, chain || undefined),
   });
 
   if (isLoading) {
@@ -30,7 +35,7 @@ export function WalletsTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -40,6 +45,19 @@ export function WalletsTable() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <select
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring max-w-[130px]"
+        >
+          <option value="">All currencies</option>
+          {WALLET_CURRENCIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <ChainSelect value={chain} onChange={setChain} />
       </div>
 
       <div className="rounded-md border border-border bg-card">
@@ -48,6 +66,7 @@ export function WalletsTable() {
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Currency</TableHead>
+              <TableHead>Chain</TableHead>
               <TableHead>Balance</TableHead>
               <TableHead>Reserved</TableHead>
               <TableHead>Last Updated</TableHead>
@@ -63,6 +82,9 @@ export function WalletsTable() {
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{wallet.currency}</Badge>
+                </TableCell>
+                <TableCell>
+                  <ChainBadge chain={wallet.chain} />
                 </TableCell>
                 <TableCell className="font-mono">
                   {wallet.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}

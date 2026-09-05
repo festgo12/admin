@@ -10,13 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Search, MoreHorizontal, Eye, AlertTriangle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { ChainBadge, ChainSelect } from '@/components/ui/chain-badge';
 
 export function OrdersTable() {
   const [search, setSearch] = useState('');
+  const [chain, setChain] = useState('');
 
   const { data: ordersData, isLoading } = useQuery({
-    queryKey: ['admin-orders', search],
-    queryFn: () => adminService.getOrders(1, 20, search),
+    queryKey: ['admin-orders', search, chain],
+    queryFn: () => adminService.getOrders(1, 20, search, chain || undefined),
   });
 
   const getStatusVariant = (status: string) => {
@@ -41,7 +43,7 @@ export function OrdersTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -51,6 +53,7 @@ export function OrdersTable() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <ChainSelect value={chain} onChange={setChain} />
       </div>
 
       <div className="rounded-md border border-border bg-card overflow-hidden">
@@ -60,6 +63,7 @@ export function OrdersTable() {
               <TableHead>Order ID</TableHead>
               <TableHead>Buyer</TableHead>
               <TableHead>Seller</TableHead>
+              <TableHead>Chain</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
@@ -79,6 +83,9 @@ export function OrdersTable() {
                 <TableCell>
                   <p className="font-medium text-sm">{order.seller.profile.firstName} {order.seller.profile.lastName}</p>
                   <p className="text-xs text-muted-foreground">{order.seller.email}</p>
+                </TableCell>
+                <TableCell>
+                  <ChainBadge chain={order.chain ?? order.ad?.chain} />
                 </TableCell>
                 <TableCell>
                   <p className="font-bold text-sm">₦{order.fiatAmount.toLocaleString()}</p>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/services/admin-service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,9 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Activity, ArrowUpRight, ArrowDownLeft, RefreshCw, DollarSign, Clock, Radio } from 'lucide-react';
 import { toast } from 'sonner';
+import { ChainBadge, ChainSelect } from '@/components/ui/chain-badge';
 
 export function BlockchainMonitoring() {
   const queryClient = useQueryClient();
+  const [chain, setChain] = useState('');
 
   const { data: stats } = useQuery({
     queryKey: ['blockchain-stats'],
@@ -19,8 +22,8 @@ export function BlockchainMonitoring() {
   });
 
   const { data: txData, isLoading } = useQuery({
-    queryKey: ['blockchain-transactions'],
-    queryFn: () => adminService.getBlockchainTransactions(1, 10),
+    queryKey: ['blockchain-transactions', chain],
+    queryFn: () => adminService.getBlockchainTransactions(1, 10, chain || undefined),
     refetchInterval: 5000,
   });
 
@@ -212,12 +215,17 @@ export function BlockchainMonitoring() {
 
       {/* Recent Transactions Table */}
       <div className="rounded-md border border-border bg-card">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h3 className="text-sm font-medium">Recent Blockchain Transactions</h3>
+          <ChainSelect value={chain} onChange={setChain} />
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Type</TableHead>
               <TableHead>User</TableHead>
               <TableHead>Asset</TableHead>
+              <TableHead>Chain</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Reference/TxID</TableHead>
@@ -226,7 +234,7 @@ export function BlockchainMonitoring() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-10">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-10">Loading...</TableCell></TableRow>
             ) : txData?.transactions?.map((tx: any) => (
               <TableRow key={tx.id}>
                 <TableCell>
@@ -241,6 +249,9 @@ export function BlockchainMonitoring() {
                 </TableCell>
                 <TableCell>
                    <Badge variant="outline">{tx.wallet.currency}</Badge>
+                </TableCell>
+                <TableCell>
+                  <ChainBadge chain={tx.wallet?.chain ?? tx.metadata?.chain} />
                 </TableCell>
                 <TableCell className="font-mono">
                   {tx.amount.toLocaleString()}

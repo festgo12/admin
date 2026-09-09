@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   FileText,
   ShieldCheck,
+  Gift,
   LogOut,
   Bell,
   HelpCircle
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Advertisements', href: '/admin/ads', icon: TrendingUp },
   { name: 'Wallets', href: '/admin/wallets', icon: Wallet },
   { name: 'Gift Cards', href: '/admin/gift-cards', icon: CreditCard },
+  { name: 'Gift Card Store', href: '/admin/gift-card-store', icon: Gift },
   { name: 'Disputes', href: '/admin/disputes', icon: AlertTriangle },
   { name: 'Paystack Payments', href: '/admin/payments', icon: CreditCard },
   { name: 'Notifications', href: '/admin/notifications', icon: Bell },

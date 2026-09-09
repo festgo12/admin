@@ -15,10 +15,28 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, CreditCard, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, CreditCard, ExternalLink, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import Image from 'next/image';
+
+const EVIDENCE_LABELS = ['Front of card', 'Back of card'];
+
+type ApiError = { response?: { data?: { message?: string } } };
+
+const BALANCE_CHECK_URLS: Record<string, string> = {
+  AMAZON: 'https://www.amazon.com/gc/balance',
+  APPLE: 'https://secure.store.apple.com/shop/giftcard/balance',
+  GOOGLE_PLAY: 'https://play.google.com/redeem',
+  STEAM: 'https://store.steampowered.com/account/',
+};
+
+function getBrandLabel(brand: string): string {
+  return brand
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
 
 interface GiftCardListingDetailDialogProps {
   listingId: string | null;
@@ -75,8 +93,8 @@ export function GiftCardListingDetailDialog({
       setShowRejectInput(false);
       setRejectNote('');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to moderate listing');
+    onError: (error: ApiError) => {
+      toast.error(error.response?.data?.message || 'Failed to moderate listing');
     },
   });
 
@@ -190,50 +208,91 @@ export function GiftCardListingDetailDialog({
                 </div>
               </div>
 
-              {/* Evidence */}
+              {/* Proof of Card (Admin Only) */}
               {((listing.evidenceUrls && listing.evidenceUrls.length > 0) ||
                 (listing.evidenceRecords && listing.evidenceRecords.length > 0)) && (
-                <div className="rounded-lg border border-border p-4">
-                  <h4 className="font-medium mb-3 text-sm text-muted-foreground uppercase tracking-wide">
-                    Evidence ({listing.evidenceRecords?.length || listing.evidenceUrls?.length || 0} files)
-                  </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {(listing.evidenceRecords || []).map((ev) => (
-                      <a
-                        key={ev.id}
-                        href={ev.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative aspect-square rounded-lg border border-border overflow-hidden bg-muted/30 flex items-center justify-center"
-                      >
-                        {ev.fileType.startsWith('image/') ? (
-                          <Image
-                            src={ev.fileUrl}
-                            alt="Evidence"
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs text-muted-foreground">{ev.fileType}</span>
-                        )}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <ExternalLink className="h-5 w-5 text-white" />
-                        </div>
-                      </a>
-                    ))}
-                    {listing.evidenceRecords?.length === 0 &&
-                      listing.evidenceUrls?.map((url, i) => (
+                <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-sm text-yellow-500 uppercase tracking-wide">
+                      Proof of Card (Admin Only)
+                    </h4>
+                    {(() => {
+                      const balanceUrl = BALANCE_CHECK_URLS[listing.brand];
+                      if (!balanceUrl) return null;
+                      return (
                         <a
-                          key={i}
+                          href={balanceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-xs font-medium text-primary hover:underline"
+                        >
+                          <ShieldCheck className="h-4 w-4" />
+                          Verify balance on {getBrandLabel(listing.brand)}
+                        </a>
+                      );
+                    })()}
+                  </div>
+
+                  {listing.evidenceUrls.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {listing.evidenceUrls.map((url, i) => (
+                        <a
+                          key={`${url}-${i}`}
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
+                          className="group relative aspect-square rounded-lg border border-border overflow-hidden bg-muted/30 flex items-center justify-center"
                         >
-                          Evidence {i + 1}
+                          <Image
+                            src={url}
+                            alt={EVIDENCE_LABELS[i] || `Proof ${i + 1}`}
+                            fill
+                            className="object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.opacity = '0';
+                            }}
+                          />
+                          <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-xs px-2 py-1 flex items-center justify-between">
+                            <span>{EVIDENCE_LABELS[i] || `Proof ${i + 1}`}</span>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </div>
                         </a>
                       ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {listing.evidenceRecords && listing.evidenceRecords.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Legacy evidence records
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {listing.evidenceRecords.map((ev) => (
+                          <a
+                            key={ev.id}
+                            href={ev.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative aspect-square rounded-lg border border-border overflow-hidden bg-muted/30 flex items-center justify-center"
+                          >
+                            {ev.fileType.startsWith('image/') ? (
+                              <Image
+                                src={ev.fileUrl}
+                                alt="Evidence"
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">{ev.fileType}</span>
+                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <ExternalLink className="h-5 w-5 text-white" />
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

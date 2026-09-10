@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   giftCardAdminService,
   StoreStats,
+  StoreConfig,
   StoreProductAdmin,
   StoreOrderAdmin,
 } from '@/services/gift-card-admin-service';
@@ -85,6 +86,62 @@ function getOrderStatusBadge(status: string) {
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
+}
+
+function getEnvBadge(config: StoreConfig | undefined) {
+  if (!config?.configured) {
+    return (
+      <Badge className="bg-gray-500/20 text-gray-500">
+        Giftbit · Not configured
+      </Badge>
+    );
+  }
+  return config.environment === 'production' ? (
+    <Badge className="bg-green-500/20 text-green-500">Giftbit · Production</Badge>
+  ) : (
+    <Badge className="bg-yellow-500/20 text-yellow-500">Giftbit · Testbed</Badge>
+  );
+}
+
+function toUsd(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—';
+  return `$${value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function ProviderStatus({ config }: { config: StoreConfig | undefined }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-sm">
+      {getEnvBadge(config)}
+      {config?.configured &&
+        (config.fundsUsd ? (
+          <span className="text-muted-foreground">
+            Funds:{' '}
+            <span className="text-green-500 font-medium">
+              {toUsd(config.fundsUsd.available)} available
+            </span>
+            {' · '}
+            <span className="text-yellow-500">{toUsd(config.fundsUsd.pending)} pending</span>
+            {' · '}
+            <span className="text-muted-foreground">{toUsd(config.fundsUsd.reserved)} reserved</span>
+          </span>
+        ) : (
+          <span className="text-muted-foreground">
+            Token configured but fund balance unavailable.
+          </span>
+        ))}
+      {!config?.configured && (
+        <span className="text-muted-foreground">
+          Set{' '}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">GIFTBIT_ENV</code> and the matching{' '}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">GIFTBIT_*_API_TOKEN</code> to enable
+          purchases.
+        </span>
+      )}
+    </div>
+  );
 }
 
 function ProductEditDialog({
@@ -247,6 +304,11 @@ export default function GiftCardStorePage() {
     queryFn: () => giftCardAdminService.getStoreStats(),
   });
 
+  const { data: storeConfig } = useQuery<StoreConfig>({
+    queryKey: ['admin-gift-card-store-config'],
+    queryFn: () => giftCardAdminService.getStoreConfig(),
+  });
+
   const { data: productData, isLoading: productLoading } = useQuery({
     queryKey: ['admin-gift-card-store-products', productPage, productTypeFilter, productSearch],
     queryFn: () =>
@@ -290,7 +352,7 @@ export default function GiftCardStorePage() {
         <div>
           <h1 className="text-3xl font-bold font-outfit">Gift Card Store</h1>
           <p className="text-muted-foreground">
-            Reloadly-powered catalog, product enablement, and orders.
+            Giftbit-powered catalog, product enablement, and orders.
           </p>
         </div>
         <Button
@@ -302,6 +364,8 @@ export default function GiftCardStorePage() {
           {syncMutation.isPending ? 'Syncing…' : 'Sync Catalog'}
         </Button>
       </div>
+
+      <ProviderStatus config={storeConfig} />
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -451,7 +515,7 @@ export default function GiftCardStorePage() {
                     ) : products.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center py-8">
-                          No products found. Run a catalog sync to import from Reloadly.
+                          No products found. Run a catalog sync to import from Giftbit.
                         </TableCell>
                       </TableRow>
                     ) : (

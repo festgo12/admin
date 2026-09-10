@@ -89,7 +89,7 @@ export interface GiftCardFilters {
   search?: string;
 }
 
-// ─── Gift Card Store (Reloadly) ─────────────────────────────────────────────
+// ─── Gift Card Store (Giftbit) ──────────────────────────────────────────────
 
 export interface StoreStats {
   totalProducts: number;
@@ -103,7 +103,7 @@ export interface StoreStats {
 
 export interface StoreBrandAdmin {
   id: string;
-  providerBrandId: number;
+  providerBrandId: string;
   brandName: string;
   logoUrl: string | null;
   backgroundColor: string | null;
@@ -111,7 +111,7 @@ export interface StoreBrandAdmin {
 
 export interface StoreProductAdmin {
   id: string;
-  providerProductId: number;
+  providerProductId: string;
   productName: string;
   brand: StoreBrandAdmin | null;
   countryCode: string;
@@ -140,6 +140,8 @@ export interface StoreOrderAdmin {
   sellPriceNgn: number | string;
   feeNgn: number | string;
   recipientEmail: string | null;
+  giftLink: string | null;
+  providerGiftUuid: string | null;
   cardCode: string | null;
   cardPin: string | null;
   failureMessage: string | null;
@@ -173,6 +175,17 @@ export interface StoreProductFilters {
 export interface StoreOrderFilters {
   status?: string;
   search?: string;
+}
+
+export interface StoreConfig {
+  provider: string;
+  configured: boolean;
+  environment: 'testbed' | 'production' | null;
+  fundsUsd: {
+    available: number;
+    pending: number;
+    reserved: number;
+  } | null;
 }
 
 export const giftCardAdminService = {
@@ -213,15 +226,20 @@ export const giftCardAdminService = {
     return response.data;
   },
 
-  // ─── Gift Card Store (Reloadly) ────────────────────────────────────────
+  // ─── Gift Card Store (Giftbit) ─────────────────────────────────────────
 
   getStoreStats: async (): Promise<StoreStats> => {
     const response = await apiClient.get('/admin/gift-card-store/stats');
     return response.data;
   },
 
-  syncStoreCatalog: async (countries?: string[]) => {
-    const response = await apiClient.post('/admin/gift-card-store/sync', { countries });
+  getStoreConfig: async (): Promise<StoreConfig> => {
+    const response = await apiClient.get('/admin/gift-card-store/config');
+    return response.data;
+  },
+
+  syncStoreCatalog: async () => {
+    const response = await apiClient.post('/admin/gift-card-store/sync');
     return response.data;
   },
 

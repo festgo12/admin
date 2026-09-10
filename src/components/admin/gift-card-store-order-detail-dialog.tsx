@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Copy } from 'lucide-react';
+import { Gift, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GiftCardStoreOrderDetailDialogProps {
@@ -68,7 +68,7 @@ export function GiftCardStoreOrderDetailDialog({
             Gift Card Store Order
           </DialogTitle>
           <DialogDescription>
-            Order details including the delivered card code
+            Order details including the claim link and Giftbit provider info
           </DialogDescription>
         </DialogHeader>
 
@@ -107,6 +107,12 @@ export function GiftCardStoreOrderDetailDialog({
                     </p>
                   </div>
                   <div>
+                    <p className="text-muted-foreground">Provider Gift UUID</p>
+                    <p className="font-mono text-xs mt-1 break-all">
+                      {order.providerGiftUuid || '—'}
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-muted-foreground">Total Paid</p>
                     <p className="mt-1 font-bold">₦{toNum(order.sellPriceNgn).toLocaleString()}</p>
                   </div>
@@ -131,39 +137,48 @@ export function GiftCardStoreOrderDetailDialog({
                 )}
               </div>
 
-              {/* Card Code */}
-              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4">
-                <h4 className="font-medium mb-3 text-sm text-yellow-500 uppercase tracking-wide">
-                  Delivered Card (Admin Only)
+              {/* Claim Link */}
+              <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4">
+                <h4 className="font-medium mb-3 text-sm text-green-500 uppercase tracking-wide">
+                  Claim Link (Admin Only)
                 </h4>
-                {order.cardCode ? (
+                {order.giftLink ? (
                   <div className="space-y-3">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs text-muted-foreground">Card Code</p>
-                        <button
-                          onClick={() => copyText(order.cardCode)}
-                          className="text-primary hover:underline text-xs inline-flex items-center gap-1"
-                        >
-                          <Copy className="h-3 w-3" /> Copy
-                        </button>
-                      </div>
-                      <p className="font-mono font-bold bg-black/40 rounded-md px-3 py-2 break-all">
-                        {order.cardCode}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        Giftbit embedded claim page (buyer claims here)
                       </p>
+                      <button
+                        onClick={() => copyText(order.giftLink)}
+                        className="text-primary hover:underline text-xs inline-flex items-center gap-1 shrink-0"
+                      >
+                        <Copy className="h-3 w-3" /> Copy
+                      </button>
                     </div>
-                    {order.cardPin && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Card PIN</p>
-                        <p className="font-mono font-bold bg-black/40 rounded-md px-3 py-2 break-all">
-                          {order.cardPin}
-                        </p>
-                      </div>
-                    )}
+                    <a
+                      href={order.giftLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono font-bold bg-black/40 rounded-md px-3 py-2 break-all block hover:underline"
+                    >
+                      {order.giftLink}
+                    </a>
+                    <a
+                      href={order.giftLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-green-500 hover:underline"
+                    >
+                      <ExternalLink className="h-4 w-4" /> Open claim page
+                    </a>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    No card code delivered. {order.status === 'PENDING' ? 'The order is still processing.' : ''}
+                    No claim link yet.{' '}
+                    {order.status === 'PENDING'
+                      ? 'The order is still processing at Giftbit.'
+                      : 'This order did not produce a redeemable link.'}{' '}
+                    Raw card codes/PINs are never stored on the platform.
                   </p>
                 )}
               </div>

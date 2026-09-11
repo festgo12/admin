@@ -224,39 +224,72 @@ export function DisputeDetailDialog({ disputeId, open, onOpenChange }: DisputeDe
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                      <ShoppingBag className="h-3 w-3" /> {dispute.order ? 'Order' : 'Subject'}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {dispute.order ? (
-                      <>
-                        <p className="font-mono text-xs">{dispute.orderId}</p>
-                        <p className="text-sm font-bold mt-1">
-                          {Number(dispute.order.fiatAmount).toLocaleString()} NGN
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                    <ShoppingBag className="h-3 w-3" /> {dispute.order ? 'Marketplace Order' : dispute.storeOrder ? 'Gift Card Store Order' : 'Subject'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dispute.order ? (
+                    <>
+                      <p className="font-mono text-xs">{dispute.orderId}</p>
+                      <p className="text-sm font-bold mt-1">
+                        {Number(dispute.order.fiatAmount).toLocaleString()} NGN
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {dispute.order.cryptoAmount} {dispute.order.ad.asset}
+                      </p>
+                    </>
+                  ) : dispute.storeOrder ? (
+                    <>
+                      <p className="font-mono text-xs">{dispute.storeOrder.id}</p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-sm font-medium">
+                          {dispute.storeOrder.product?.productName || 'Gift Card'}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {dispute.order.cryptoAmount} {dispute.order.ad.asset}
+                          {dispute.storeOrder.product?.brand?.brandName || 'Unknown brand'}
                         </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-mono text-xs">{dispute.subjectType}</p>
-                        {dispute.reference ? (
-                          <p className="text-xs text-muted-foreground mt-1 break-all">
-                            {dispute.reference}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            No order linked
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                        <p className="text-xs text-muted-foreground">
+                          {Number(dispute.storeOrder.denomination).toFixed(2)} {dispute.storeOrder.currencyCode} &times; {dispute.storeOrder.quantity}
+                        </p>
+                        <p className="text-sm font-bold mt-1">
+                          ₦{Number(dispute.storeOrder.sellPriceNgn).toLocaleString()}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs">
+                            {dispute.storeOrder.status}
+                          </Badge>
+                          {dispute.storeOrder.giftLink && (
+                            <a
+                              href={dispute.storeOrder.giftLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline truncate max-w-[200px]"
+                            >
+                              View claim link
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-mono text-xs">{dispute.subjectType}</p>
+                      {dispute.reference ? (
+                        <p className="text-xs text-muted-foreground mt-1 break-all">
+                          {dispute.reference}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          No order linked
+                        </p>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
               </div>
 
               <Card>

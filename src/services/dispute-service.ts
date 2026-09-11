@@ -36,9 +36,40 @@ export interface DisputeOrder {
   };
 }
 
+export interface DisputeStoreOrder {
+  id: string;
+  status: string;
+  denomination: string;
+  currencyCode: string;
+  quantity: number;
+  sellPriceNgn: string;
+  feeNgn: string;
+  giftLink: string | null;
+  failureMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  product: {
+    productName: string;
+    brand: {
+      brandName: string;
+      logoUrl: string | null;
+      backgroundColor: string | null;
+    } | null;
+  } | null;
+  user: {
+    id: string;
+    email: string;
+    profile: {
+      firstName: string | null;
+      lastName: string | null;
+    } | null;
+  } | null;
+}
+
 export interface Dispute {
   id: string;
   orderId: string | null;
+  storeOrderId: string | null;
   subjectType: string;
   reference: string | null;
   initiatorId: string;
@@ -51,6 +82,7 @@ export interface Dispute {
   createdAt: string;
   updatedAt: string;
   order: DisputeOrder | null;
+  storeOrder: DisputeStoreOrder | null;
   initiator: {
     id: string;
     email: string;

@@ -183,6 +183,16 @@ export function DisputesTable() {
                           {Number(dispute.order?.fiatAmount).toLocaleString()} NGN / {dispute.order?.cryptoAmount} {dispute.order?.ad?.asset}
                         </p>
                       </>
+                    ) : dispute.storeOrder ? (
+                      <>
+                        <p className="font-mono text-xs">{dispute.storeOrder.id.slice(0, 8)}...</p>
+                        <p className="text-xs text-muted-foreground">
+                          {dispute.storeOrder.product?.productName || 'Gift Card'} &middot; ₦{Number(dispute.storeOrder.sellPriceNgn).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {dispute.storeOrder.status}
+                        </p>
+                      </>
                     ) : (
                       <>
                         <p className="font-mono text-xs">{dispute.subjectType}</p>

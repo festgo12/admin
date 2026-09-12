@@ -232,9 +232,9 @@ export function DisputesTable() {
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                      <Button variant="ghost" className="h-8 w-8 p-0" aria-label={`Actions for dispute ${dispute.id}`}>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>

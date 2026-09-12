@@ -135,7 +135,7 @@ export function AdsTable() {
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted font-bold text-lg">
+                      <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted font-bold text-lg" aria-label={`Actions for ad ${ad.id}`}>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

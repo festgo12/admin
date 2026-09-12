@@ -26,6 +26,8 @@ interface ChainSelectProps {
   allLabel?: string;
   chains?: readonly string[];
   className?: string;
+  /** Accessible name for the native select (no visible label in tables). */
+  ariaLabel?: string;
 }
 
 /** Native select styled to match Input, used for chain filtering. */
@@ -35,12 +37,14 @@ export function ChainSelect({
   allLabel = 'All chains',
   chains,
   className,
+  ariaLabel = 'Filter by chain',
 }: ChainSelectProps) {
   const options = chains ?? ['ETH', 'BSC', 'POLYGON', 'SOLANA', 'TRON', 'BTC'];
   return (
     <select
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
+      aria-label={ariaLabel}
       className={cn(
         'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 max-w-[160px]',
         className,

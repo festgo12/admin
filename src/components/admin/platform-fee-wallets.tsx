@@ -38,13 +38,7 @@ interface SweepAllResult {
   success?: boolean;
   message?: string;
   swept?: number;
-  summary?: {
-    evmSwept?: number;
-    btcSwept?: number;
-    evmSkipped?: number;
-    btcSkipped?: number;
-    errors?: string[];
-  };
+  summary?: SweepSummary;
 }
 
 interface ApiError {
@@ -87,9 +81,14 @@ export function PlatformFeeWallets() {
     mutationFn: adminService.sweepAll,
     onSuccess: (result: SweepAllResult) => {
       const summary = result.summary;
-      if (summary && (summary.evmSwept || summary.btcSwept)) {
+      const totalSwept =
+        (summary?.evmSwept ?? 0) +
+        (summary?.btcSwept ?? 0) +
+        (summary?.solSwept ?? 0) +
+        (summary?.tronSwept ?? 0);
+      if (summary && totalSwept > 0) {
         toast.success(
-          `Swept ${summary.evmSwept ?? 0} EVM + ${summary.btcSwept ?? 0} BTC address(es) into the platform wallet`,
+          `Swept ${summary.evmSwept ?? 0} EVM + ${summary.btcSwept ?? 0} BTC + ${summary.solSwept ?? 0} SOL + ${summary.tronSwept ?? 0} TRON address(es) into the platform wallet`,
         );
       } else if (result.message) {
         toast.success(result.message);

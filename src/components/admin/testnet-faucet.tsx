@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Droplet } from 'lucide-react';
 import { toast } from 'sonner';
+import { CHAINS, type Chain } from '@/lib/chain';
 
 const FAUCET_CURRENCIES = ['BTC', 'ETH', 'USDT', 'USDC'];
 
@@ -22,6 +23,19 @@ export function TestnetFaucet() {
   const [email, setEmail] = useState('');
   const [currency, setCurrency] = useState('USDT');
   const [amount, setAmount] = useState('');
+  const [chain, setChain] = useState<Chain>('ETH');
+
+  // Chain choices follow the currency: BTC → BTC only, SOLANA/TRON tokens →
+  // their own chain, everything else → the EVM family + SOL/TRON.
+  const availableChains: Chain[] =
+    currency === 'BTC'
+      ? ['BTC']
+      : currency === 'USDT' || currency === 'USDC'
+        ? CHAINS.filter((c) => c !== 'BTC')
+        : ['ETH'];
+  const effectiveChain = availableChains.includes(chain)
+    ? chain
+    : availableChains[0];
 
   const { data: cryptoStatus } = useQuery({
     queryKey: ['crypto-system-status'],
@@ -33,7 +47,12 @@ export function TestnetFaucet() {
 
   const creditMutation = useMutation({
     mutationFn: () =>
-      adminService.creditTestFunds(email.trim(), currency, parseFloat(amount)),
+      adminService.creditTestFunds(
+        email.trim(),
+        currency,
+        parseFloat(amount),
+        currency === 'USDT' || currency === 'USDC' ? effectiveChain : undefined,
+      ),
     onSuccess: (result) => {
       toast.success(`Credited ${amount} ${currency} (ref: ${result.reference})`);
       setAmount('');
@@ -91,6 +110,22 @@ export function TestnetFaucet() {
                 className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
               >
                 {FAUCET_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="faucet-chain">Chain</Label>
+              <select
+                id="faucet-chain"
+                value={effectiveChain}
+                onChange={(e) => setChain(e.target.value as Chain)}
+                disabled={availableChains.length === 1}
+                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+              >
+                {availableChains.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>

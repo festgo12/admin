@@ -336,11 +336,17 @@ export const adminService = {
     return response.data;
   },
 
-  creditTestFunds: async (email: string, currency: string, amount: number) => {
+  creditTestFunds: async (
+    email: string,
+    currency: string,
+    amount: number,
+    chain?: string,
+  ) => {
     const response = await apiClient.post('/admin/testnet/credit', {
       email,
       currency,
       amount,
+      ...(chain ? { chain } : {}),
     });
     return response.data;
   },

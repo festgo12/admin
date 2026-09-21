@@ -18,6 +18,7 @@ import type { SweepConfigItem, SweepSummary } from '@/services/admin-service';
 interface FeeWallet {
   id: string;
   currency: string;
+  chain?: string | null;
   address: string | null;
   balance: number;
   reservedBalance: number;
@@ -128,8 +129,11 @@ export function PlatformFeeWallets() {
           ) : (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                {chainBalances.map((b) => (
-                  <div key={`${b.chain ?? ''}-${b.currency}`} className="rounded-md border border-border p-3">
+                {chainBalances.map((b, i) => (
+                  <div
+                    key={`${b.chain ?? ''}-${b.currency}-${i}`}
+                    className="rounded-md border border-border p-3"
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <ChainBadge chain={b.chain} />
@@ -267,7 +271,7 @@ export function PlatformFeeWallets() {
               </TableHeader>
               <TableBody>
                 {wallets.map((w) => (
-                  <FeeWalletRow key={w.currency} wallet={w} />
+                  <FeeWalletRow key={w.id} wallet={w} />
                 ))}
               </TableBody>
             </Table>
@@ -488,7 +492,10 @@ function FeeWalletRow({ wallet }: { wallet: FeeWallet }) {
     <>
       <TableRow>
         <TableCell>
-          <Badge variant="outline">{wallet.currency}</Badge>
+          <div className="flex items-center gap-1.5">
+            <Badge variant="outline">{wallet.currency}</Badge>
+            {wallet.chain ? <ChainBadge chain={wallet.chain} /> : null}
+          </div>
         </TableCell>
         <TableCell>
           {wallet.address ? (

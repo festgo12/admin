@@ -29,6 +29,34 @@ interface ApiError {
   response?: { data?: { message?: string } };
 }
 
+/** Renders a visible failure banner instead of silently showing empty data. */
+function QueryErrorBanner({
+  label,
+  error,
+  onRetry,
+}: {
+  label: string;
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const apiError = error as ApiError;
+  const detail =
+    apiError?.response?.data?.message ||
+    (error instanceof Error ? error.message : '') ||
+    'Unknown error';
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3">
+      <div>
+        <p className="text-sm font-medium text-red-500">Failed to load {label}</p>
+        <p className="text-xs text-muted-foreground">{detail}</p>
+      </div>
+      <Button variant="outline" size="sm" onClick={onRetry}>
+        Retry
+      </Button>
+    </div>
+  );
+}
+
 export function OnChainHistory() {
   const [evmAddress, setEvmAddress] = useState('');
   const [evmAddressInput, setEvmAddressInput] = useState('');
@@ -45,30 +73,58 @@ export function OnChainHistory() {
   const [solPage, setSolPage] = useState(1);
 
   // BTC History
-  const { data: btcData, isLoading: btcLoading } = useQuery({
+  const {
+    data: btcData,
+    isLoading: btcLoading,
+    isError: btcError,
+    error: btcErrorObj,
+    refetch: btcRefetch,
+  } = useQuery({
     queryKey: ['btc-history', btcPage],
     queryFn: () => adminService.getBtcHistory(btcPage, 50),
+    retry: 1,
   });
 
   // EVM History (only fetches when address is set)
-  const { data: evmData, isLoading: evmLoading } = useQuery({
+  const {
+    data: evmData,
+    isLoading: evmLoading,
+    isError: evmError,
+    error: evmErrorObj,
+    refetch: evmRefetch,
+  } = useQuery({
     queryKey: ['evm-history', evmAddress, evmChain, evmPage],
     queryFn: () => adminService.getEvmHistory(evmAddress, evmPage, evmChain),
     enabled: !!evmAddress,
+    retry: 1,
   });
 
   // TRON History
-  const { data: tronData, isLoading: tronLoading } = useQuery({
+  const {
+    data: tronData,
+    isLoading: tronLoading,
+    isError: tronError,
+    error: tronErrorObj,
+    refetch: tronRefetch,
+  } = useQuery({
     queryKey: ['tron-history', tronAddress, tronPage],
     queryFn: () => adminService.getTronHistory(tronAddress, tronPage),
     enabled: !!tronAddress,
+    retry: 1,
   });
 
   // Solana History
-  const { data: solData, isLoading: solLoading } = useQuery({
+  const {
+    data: solData,
+    isLoading: solLoading,
+    isError: solError,
+    error: solErrorObj,
+    refetch: solRefetch,
+  } = useQuery({
     queryKey: ['sol-history', solAddress, solPage],
     queryFn: () => adminService.getSolHistory(solAddress, solPage),
     enabled: !!solAddress,
+    retry: 1,
   });
 
   const handleEvmSearch = () => {
@@ -136,7 +192,13 @@ export function OnChainHistory() {
           </div>
         </CardHeader>
         <CardContent>
-          {btcLoading ? (
+          {btcError ? (
+            <QueryErrorBanner
+              label="BTC history"
+              error={btcErrorObj}
+              onRetry={() => btcRefetch()}
+            />
+          ) : btcLoading ? (
             <p className="text-sm text-muted-foreground py-4">Loading BTC history…</p>
           ) : !btcData?.transactions?.length ? (
             <p className="text-sm text-muted-foreground py-4">No BTC transactions found.</p>
@@ -226,6 +288,12 @@ export function OnChainHistory() {
             <p className="text-sm text-muted-foreground py-4">
               Enter an EVM address above to view on-chain transfer history.
             </p>
+          ) : evmError ? (
+            <QueryErrorBanner
+              label={`${evmChain} history`}
+              error={evmErrorObj}
+              onRetry={() => evmRefetch()}
+            />
           ) : evmLoading ? (
             <p className="text-sm text-muted-foreground py-4">
               Loading {evmChain} history for {evmAddress}…
@@ -274,6 +342,12 @@ export function OnChainHistory() {
             <p className="text-sm text-muted-foreground py-4">
               Enter a TRON address above to view its TRC-20 USDT/USDC history.
             </p>
+          ) : tronError ? (
+            <QueryErrorBanner
+              label="TRON history"
+              error={tronErrorObj}
+              onRetry={() => tronRefetch()}
+            />
           ) : tronLoading ? (
             <p className="text-sm text-muted-foreground py-4">Loading TRON history…</p>
           ) : !tronData?.transfers?.length ? (
@@ -317,6 +391,12 @@ export function OnChainHistory() {
             <p className="text-sm text-muted-foreground py-4">
               Enter a Solana address above to view its SPL USDT/USDC history.
             </p>
+          ) : solError ? (
+            <QueryErrorBanner
+              label="Solana history"
+              error={solErrorObj}
+              onRetry={() => solRefetch()}
+            />
           ) : solLoading ? (
             <p className="text-sm text-muted-foreground py-4">Loading Solana history…</p>
           ) : !solData?.transfers?.length ? (

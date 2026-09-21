@@ -111,7 +111,23 @@ function toUsd(value: number | null | undefined): string {
   })}`;
 }
 
-function ProviderStatus({ config }: { config: StoreConfig | undefined }) {
+function ProviderStatus({
+  config,
+  statusError,
+}: {
+  config: StoreConfig | undefined;
+  statusError?: { message?: string } | null;
+}) {
+  if (statusError) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <Badge className="bg-red-500/20 text-red-500">Giftbit · Status unavailable</Badge>
+        <span className="text-muted-foreground">
+          {statusError.message || 'Could not load provider configuration. Is the backend running and your session valid?'}
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
       {getEnvBadge(config)}
@@ -304,9 +320,14 @@ export default function GiftCardStorePage() {
     queryFn: () => giftCardAdminService.getStoreStats(),
   });
 
-  const { data: storeConfig } = useQuery<StoreConfig>({
+  const {
+    data: storeConfig,
+    isError: storeConfigError,
+    error: storeConfigErrorObj,
+  } = useQuery<StoreConfig>({
     queryKey: ['admin-gift-card-store-config'],
     queryFn: () => giftCardAdminService.getStoreConfig(),
+    retry: 1,
   });
 
   const { data: productData, isLoading: productLoading } = useQuery({
@@ -365,7 +386,21 @@ export default function GiftCardStorePage() {
         </Button>
       </div>
 
-      <ProviderStatus config={storeConfig} />
+      <ProviderStatus
+        config={storeConfig}
+        statusError={
+          storeConfigError
+            ? {
+                message:
+                  (storeConfigErrorObj as { response?: { data?: { message?: string } } })
+                    ?.response?.data?.message ||
+                  (storeConfigErrorObj instanceof Error
+                    ? storeConfigErrorObj.message
+                    : undefined),
+              }
+            : null
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

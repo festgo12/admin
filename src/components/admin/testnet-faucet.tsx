@@ -10,6 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Droplet } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface ApiError {
+  response?: { data?: { message?: string } };
+}
 import { CHAINS, type Chain } from '@/lib/chain';
 
 const FAUCET_CURRENCIES = ['BTC', 'ETH', 'USDT', 'USDC'];
@@ -37,10 +41,11 @@ export function TestnetFaucet() {
     ? chain
     : availableChains[0];
 
-  const { data: cryptoStatus } = useQuery({
+  const { data: cryptoStatus, isError: statusError, error: statusErrorObj } = useQuery({
     queryKey: ['crypto-system-status'],
     queryFn: adminService.getCryptoSystemStatus,
     refetchInterval: 30000,
+    retry: 1,
   });
 
   const isTestnet = cryptoStatus?.isTestnet ?? false;
@@ -78,7 +83,15 @@ export function TestnetFaucet() {
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            {isTestnet ? (
+            {statusError ? (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Status unavailable —
+                {' '}
+                {(statusErrorObj as ApiError)?.response?.data?.message ||
+                  (statusErrorObj instanceof Error ? statusErrorObj.message : 'could not load network status')}
+              </Badge>
+            ) : isTestnet ? (
               <Badge variant="outline" className="bg-green-500/10 text-green-500">
                 Testnet active ({cryptoStatus?.network})
               </Badge>

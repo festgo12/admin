@@ -16,7 +16,8 @@ import {
   Gift,
   LogOut,
   Bell,
-  HelpCircle
+  HelpCircle,
+  UserCircle2
 } from 'lucide-react';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -34,6 +35,7 @@ const navigation = [
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Security Center', href: '/admin/security', icon: ShieldCheck },
   { name: 'Help Center', href: '/admin/help-center', icon: HelpCircle },
+  { name: 'Profile', href: '/admin/profile', icon: UserCircle2 },
 ];
 
 export function AdminSidebar() {

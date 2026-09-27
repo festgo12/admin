@@ -124,6 +124,9 @@ export interface StoreProductAdmin {
   discountPercentage: number | string;
   providerPriceNgn: number | string;
   markupPercent: number | string;
+  ngnPerUsd?: number;
+  indicativePriceUsd?: number | null;
+  indicativePriceNgn?: number | string;
   enabled: boolean;
   lastSyncedAt: string | null;
 }
@@ -252,9 +255,55 @@ export const giftCardAdminService = {
 
   updateStoreProduct: async (
     id: string,
-    data: { enabled?: boolean; markupPercent?: number },
+    data: {
+      enabled?: boolean;
+      markupPercent?: number;
+      productName?: string;
+      countryCode?: string;
+      denominationType?: string;
+      fixedDenominations?: number[];
+      minDenomination?: number;
+      maxDenomination?: number;
+      senderFee?: number;
+    },
   ) => {
     const response = await apiClient.patch(`/admin/gift-card-store/products/${id}`, data);
+    return response.data;
+  },
+
+  createStoreBrand: async (data: {
+    brandName: string;
+    logoUrl?: string;
+    backgroundColor?: string;
+  }): Promise<StoreBrandAdmin> => {
+    const response = await apiClient.post('/admin/gift-card-store/brands', data);
+    return response.data;
+  },
+
+  getStoreBrands: async (): Promise<StoreBrandAdmin[]> => {
+    const response = await apiClient.get('/admin/gift-card-store/brands');
+    return response.data;
+  },
+
+  createStoreProduct: async (data: {
+    providerProductId: string;
+    productName: string;
+    brandId?: string;
+    countryCode?: string;
+    currencyCode?: string;
+    denominationType: string;
+    fixedDenominations?: number[];
+    minDenomination?: number;
+    maxDenomination?: number;
+    senderFee?: number;
+    markupPercent?: number;
+  }) => {
+    const response = await apiClient.post('/admin/gift-card-store/products', data);
+    return response.data;
+  },
+
+  deleteStoreProduct: async (id: string) => {
+    const response = await apiClient.delete(`/admin/gift-card-store/products/${id}`);
     return response.data;
   },
 

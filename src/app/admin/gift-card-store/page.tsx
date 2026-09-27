@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Gift, RefreshCcw, Search, Eye, Pencil } from 'lucide-react';
+import { Gift, RefreshCcw, Search, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { GiftCardStoreOrderDetailDialog } from '@/components/admin/gift-card-store-order-detail-dialog';
 
@@ -171,9 +171,24 @@ function ProductEditDialog({
 
   const [enabled, setEnabled] = useState<boolean>(product?.enabled ?? true);
   const [markup, setMarkup] = useState<string>(product ? String(toNum(product.markupPercent)) : '5');
+  const [name, setName] = useState<string>(product?.productName ?? '');
+  const [countryCode, setCountryCode] = useState<string>(product?.countryCode ?? 'US');
+  const [denominationType, setDenominationType] = useState<string>(product?.denominationType ?? 'FIXED');
+  const [denominations, setDenominations] = useState<string>(
+    product?.fixedDenominations?.length ? product.fixedDenominations.join(', ') : '',
+  );
+  const [minDenom, setMinDenom] = useState<string>(
+    product?.minDenomination != null ? String(toNum(product.minDenomination)) : '',
+  );
+  const [maxDenom, setMaxDenom] = useState<string>(
+    product?.maxDenomination != null ? String(toNum(product.maxDenomination)) : '',
+  );
+  const [senderFee, setSenderFee] = useState<string>(String(toNum(product?.senderFee)));
+
+  const ngnPerUsd = product?.ngnPerUsd ?? 0;
 
   const updateMutation = useMutation({
-    mutationFn: (data: { enabled?: boolean; markupPercent?: number }) =>
+    mutationFn: (data: Parameters<typeof giftCardAdminService.updateStoreProduct>[1]) =>
       giftCardAdminService.updateStoreProduct(product!.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-gift-card-store-products'] });
@@ -184,31 +199,74 @@ function ProductEditDialog({
     onError: (error: unknown) => localToastError(error, 'Failed to update product'),
   });
 
+  const parsedDenominations = denominations
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0);
+
   const handleSave = () => {
     const parsedMarkup = Number(markup);
     if (Number.isNaN(parsedMarkup) || parsedMarkup < 0 || parsedMarkup > 100) {
       toast.error('Markup must be between 0 and 100');
       return;
     }
-    updateMutation.mutate({ enabled, markupPercent: parsedMarkup });
+    if (!name.trim()) {
+      toast.error('Product name is required');
+      return;
+    }
+    const type = denominationType as 'FIXED' | 'RANGE' | 'OPEN';
+    if (type === 'FIXED' && parsedDenominations.length === 0) {
+      toast.error('Add at least one fixed denomination (comma-separated USD values)');
+      return;
+    }
+    if (type === 'RANGE' && (!minDenom || Number(minDenom) <= 0)) {
+      toast.error('A minimum denomination is required for range cards');
+      return;
+    }
+    if (
+      type === 'RANGE' &&
+      minDenom &&
+      maxDenom &&
+      Number(maxDenom) <= Number(minDenom)
+    ) {
+      toast.error('Max denomination must be greater than min');
+      return;
+    }
+
+    updateMutation.mutate({
+      enabled,
+      markupPercent: parsedMarkup,
+      productName: name.trim(),
+      countryCode: countryCode.trim().toUpperCase(),
+      denominationType: type,
+      ...(type === 'FIXED' && { fixedDenominations: parsedDenominations }),
+      ...(type === 'RANGE' && minDenom && { minDenomination: Number(minDenom) }),
+      ...(type === 'RANGE' && maxDenom && { maxDenomination: Number(maxDenom) }),
+      senderFee: Number(senderFee) || 0,
+    });
   };
+
+  const previewUsd =
+    denominationType === 'FIXED' && parsedDenominations.length > 0
+      ? parsedDenominations[0]
+      : minDenom
+        ? Number(minDenom)
+        : null;
 
   return (
     <Dialog open={!!product} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Store Product</DialogTitle>
           <DialogDescription>
-            Toggle visibility and set the markup (%) on top of the provider&apos;s NGN cost.
+            Update visibility, pricing, and denominations. Purchases are fulfilled by Giftbit
+            using the brand code <code className="rounded bg-muted px-1 text-xs">{product?.providerProductId || '—'}</code>.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="rounded-md border border-border bg-muted/30 p-3">
-            <p className="font-medium text-sm break-all">{product?.productName || 'Loading…'}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {product?.brand?.brandName || 'Unknown brand'}
-            </p>
+            <p className="text-xs text-muted-foreground">{product?.brand?.brandName || 'Unknown brand'}</p>
           </div>
 
           <div className="flex items-center justify-between">
@@ -234,18 +292,82 @@ function ProductEditDialog({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="markup">
-              Markup (%)
-            </label>
-            <Input
-              id="markup"
-              type="number"
-              min={0}
-              max={100}
-              value={markup}
-              onChange={(e) => setMarkup(e.target.value)}
-            />
+            <label className="text-sm font-medium" htmlFor="edit-name">Product name</label>
+            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="edit-country">Country code</label>
+              <Input
+                id="edit-country"
+                value={countryCode}
+                maxLength={3}
+                onChange={(e) => setCountryCode(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="edit-type">Card type</label>
+              <select
+                id="edit-type"
+                value={denominationType}
+                onChange={(e) => setDenominationType(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="FIXED">Fixed denominations</option>
+                <option value="RANGE">Any amount (range)</option>
+                <option value="OPEN">Custom amount</option>
+              </select>
+            </div>
+          </div>
+
+          {denominationType === 'FIXED' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="edit-denoms">
+                Fixed denominations (USD, comma-separated)
+              </label>
+              <Input
+                id="edit-denoms"
+                placeholder="10, 25, 50, 100"
+                value={denominations}
+                onChange={(e) => setDenominations(e.target.value)}
+              />
+            </div>
+          )}
+
+          {denominationType === 'RANGE' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="edit-min">Min (USD)</label>
+                <Input id="edit-min" type="number" min={0} value={minDenom} onChange={(e) => setMinDenom(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="edit-max">Max (USD)</label>
+                <Input id="edit-max" type="number" min={0} value={maxDenom} onChange={(e) => setMaxDenom(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="edit-fee">Sender fee (USD)</label>
+              <Input id="edit-fee" type="number" min={0} step="0.01" value={senderFee} onChange={(e) => setSenderFee(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="edit-markup">Markup (%)</label>
+              <Input id="edit-markup" type="number" min={0} max={100} value={markup} onChange={(e) => setMarkup(e.target.value)} />
+            </div>
+          </div>
+
+          {previewUsd != null && ngnPerUsd > 0 && (
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+              <span className="text-muted-foreground">Price preview: </span>
+              <span className="font-medium">${previewUsd}</span>
+              <span className="text-muted-foreground"> ≈ </span>
+              <span className="font-medium">₦{Math.round(previewUsd * ngnPerUsd).toLocaleString()}</span>
+              <span className="text-xs text-muted-foreground"> (before markup)</span>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -254,6 +376,267 @@ function ProductEditDialog({
           </Button>
           <Button onClick={handleSave} disabled={updateMutation.isPending}>
             {updateMutation.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ProductCreateDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const [providerProductId, setProviderProductId] = useState('');
+  const [productName, setProductName] = useState('');
+  const [newBrandName, setNewBrandName] = useState('');
+  const [existingBrandId, setExistingBrandId] = useState('');
+  const [countryCode, setCountryCode] = useState('US');
+  const [denominationType, setDenominationType] = useState('FIXED');
+  const [denominations, setDenominations] = useState('');
+  const [minDenom, setMinDenom] = useState('');
+  const [maxDenom, setMaxDenom] = useState('');
+  const [senderFee, setSenderFee] = useState('0');
+  const [markup, setMarkup] = useState('5');
+
+  const { data: existingBrands } = useQuery({
+    queryKey: ['admin-gift-card-store-brands'],
+    queryFn: () => giftCardAdminService.getStoreBrands(),
+    enabled: open,
+  });
+
+  const createBrandMutation = useMutation({
+    mutationFn: (data: { brandName: string }) =>
+      giftCardAdminService.createStoreBrand(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-gift-card-store-brands'] });
+      toast.success('Brand created — select it below');
+    },
+    onError: (error: unknown) => localToastError(error, 'Failed to create brand'),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: Parameters<typeof giftCardAdminService.createStoreProduct>[0]) =>
+      giftCardAdminService.createStoreProduct(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-gift-card-store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-gift-card-store-stats'] });
+      toast.success('Product created (disabled — enable it from the table)');
+      onOpenChange(false);
+    },
+    onError: (error: unknown) => localToastError(error, 'Failed to create product'),
+  });
+
+  const parsedDenominations = denominations
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0);
+
+  const handleCreate = () => {
+    if (!providerProductId.trim()) {
+      toast.error('Giftbit brand code is required — find it in the catalog table');
+      return;
+    }
+    if (!productName.trim()) {
+      toast.error('Product name is required');
+      return;
+    }
+    const type = denominationType as 'FIXED' | 'RANGE' | 'OPEN';
+    if (type === 'FIXED' && parsedDenominations.length === 0) {
+      toast.error('Add at least one fixed denomination (comma-separated USD values)');
+      return;
+    }
+    if (type === 'RANGE' && (!minDenom || Number(minDenom) <= 0)) {
+      toast.error('A minimum denomination is required for range cards');
+      return;
+    }
+
+    const finish = (brandId?: string) => {
+      createMutation.mutate({
+        providerProductId: providerProductId.trim(),
+        productName: productName.trim(),
+        ...(brandId && { brandId }),
+        countryCode: countryCode.trim().toUpperCase() || 'US',
+        currencyCode: 'USD',
+        denominationType: type,
+        ...(type === 'FIXED' && { fixedDenominations: parsedDenominations }),
+        ...(type === 'RANGE' && minDenom && { minDenomination: Number(minDenom) }),
+        ...(type === 'RANGE' && maxDenom && { maxDenomination: Number(maxDenom) }),
+        senderFee: Number(senderFee) || 0,
+        markupPercent: Number(markup) || 0,
+      });
+    };
+
+    // Create the brand first when a new brand name is supplied.
+    if (newBrandName.trim()) {
+      createBrandMutation.mutate(
+        { brandName: newBrandName.trim() },
+        {
+          onSuccess: (brand) => finish(brand.id),
+        },
+      );
+    } else {
+      finish(existingBrandId || undefined);
+    }
+  };
+
+  const busy = createMutation.isPending || createBrandMutation.isPending;
+  const previewUsd =
+    denominationType === 'FIXED' && parsedDenominations.length > 0
+      ? parsedDenominations[0]
+      : minDenom
+        ? Number(minDenom)
+        : null;
+  // Approximate NGN preview; the exact live rate is applied server-side on save.
+  const ngnPerUsd = 1550;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add Store Product</DialogTitle>
+          <DialogDescription>
+            The <strong>Giftbit brand code</strong> must match a real Giftbit brand (purchases are
+            fulfilled by Giftbit). Copy it from an existing catalog row or your Giftbit dashboard.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="create-code">Giftbit brand code</label>
+            <Input
+              id="create-code"
+              placeholder="e.g. AMAZON-US"
+              value={providerProductId}
+              onChange={(e) => setProviderProductId(e.target.value.toUpperCase())}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="create-name">Product name</label>
+            <Input
+              id="create-name"
+              placeholder="e.g. Amazon Gift Card"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Brand</label>
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={existingBrandId}
+                onChange={(e) => setExistingBrandId(e.target.value)}
+                disabled={!!newBrandName.trim()}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
+              >
+                <option value="">No brand</option>
+                {(existingBrands || []).map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.brandName}
+                  </option>
+                ))}
+              </select>
+              <Input
+                placeholder="…or new brand name"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+              />
+            </div>
+            {newBrandName.trim() && (
+              <p className="text-xs text-muted-foreground">
+                A new brand “{newBrandName.trim()}” will be created with this product.
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="create-country">Country code</label>
+              <Input
+                id="create-country"
+                value={countryCode}
+                maxLength={3}
+                onChange={(e) => setCountryCode(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="create-type">Card type</label>
+              <select
+                id="create-type"
+                value={denominationType}
+                onChange={(e) => setDenominationType(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="FIXED">Fixed denominations</option>
+                <option value="RANGE">Any amount (range)</option>
+                <option value="OPEN">Custom amount</option>
+              </select>
+            </div>
+          </div>
+
+          {denominationType === 'FIXED' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="create-denoms">
+                Fixed denominations (USD, comma-separated)
+              </label>
+              <Input
+                id="create-denoms"
+                placeholder="10, 25, 50, 100"
+                value={denominations}
+                onChange={(e) => setDenominations(e.target.value)}
+              />
+            </div>
+          )}
+
+          {denominationType === 'RANGE' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="create-min">Min (USD)</label>
+                <Input id="create-min" type="number" min={0} value={minDenom} onChange={(e) => setMinDenom(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="create-max">Max (USD)</label>
+                <Input id="create-max" type="number" min={0} value={maxDenom} onChange={(e) => setMaxDenom(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="create-fee">Sender fee (USD)</label>
+              <Input id="create-fee" type="number" min={0} step="0.01" value={senderFee} onChange={(e) => setSenderFee(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="create-markup">Markup (%)</label>
+              <Input id="create-markup" type="number" min={0} max={100} value={markup} onChange={(e) => setMarkup(e.target.value)} />
+            </div>
+          </div>
+
+          {previewUsd != null && (
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+              Price preview: <span className="font-medium text-foreground">${previewUsd}</span> card value
+              {' · '}
+              <span className="font-medium text-foreground">
+                ≈ ₦{Math.round(previewUsd * ngnPerUsd).toLocaleString()}
+              </span>
+              {' (indicative — the live rate is applied when saved)'}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreate} disabled={busy}>
+            {busy ? 'Creating…' : 'Create Product'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -314,6 +697,22 @@ export default function GiftCardStorePage() {
   const [orderPage, setOrderPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => giftCardAdminService.deleteStoreProduct(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-gift-card-store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-gift-card-store-stats'] });
+      toast.success('Product deleted');
+      setDeletingProductId(null);
+    },
+    onError: (error: unknown) => {
+      localToastError(error, 'Failed to delete product');
+      setDeletingProductId(null);
+    },
+  });
 
   const { data: stats, isLoading: statsLoading } = useQuery<StoreStats>({
     queryKey: ['admin-gift-card-store-stats'],
@@ -376,14 +775,24 @@ export default function GiftCardStorePage() {
             Giftbit-powered catalog, product enablement, and orders.
           </p>
         </div>
-        <Button
-          className="gap-2"
-          onClick={() => syncMutation.mutate()}
-          disabled={syncMutation.isPending}
-        >
-          <RefreshCcw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-          {syncMutation.isPending ? 'Syncing…' : 'Sync Catalog'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="gap-2"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Product
+          </Button>
+          <Button
+            className="gap-2"
+            variant="outline"
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+          >
+            <RefreshCcw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+            {syncMutation.isPending ? 'Syncing…' : 'Sync Catalog'}
+          </Button>
+        </div>
       </div>
 
       <ProviderStatus
@@ -590,17 +999,42 @@ export default function GiftCardStorePage() {
                           </TableCell>
                           <TableCell className="font-bold">
                             {money(product.providerPriceNgn)}
+                            {product.indicativePriceUsd != null && (
+                              <div className="text-xs font-normal text-muted-foreground">
+                                ${toNum(product.indicativePriceUsd)} card
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>{toNum(product.markupPercent)}%</TableCell>
                           <TableCell>{getProductStatusBadge(product.enabled)}</TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingProductId(product.id)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingProductId(product.id)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-500"
+                                disabled={deletingProductId === product.id}
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      `Delete "${product.productName}"? Products with orders cannot be deleted.`,
+                                    )
+                                  ) {
+                                    setDeletingProductId(product.id);
+                                    deleteMutation.mutate(product.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -742,6 +1176,8 @@ export default function GiftCardStorePage() {
           if (!open) setEditingProductId(null);
         }}
       />
+
+      <ProductCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 
       <GiftCardStoreOrderDetailDialog
         orderId={selectedOrderId}
